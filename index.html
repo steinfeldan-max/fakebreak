@@ -121,6 +121,9 @@
     text-align: center;
   }
   .field:focus { outline: none; border-color: var(--coral); }
+  .phone-row { display: flex; gap: 8px; direction: ltr; }
+  .phone-row .field { min-width: 0; }
+  .field.country { flex: 0 0 118px; font-size: 20px; padding: 16px 6px; cursor: pointer; }
   #code-input { font-size: 32px; letter-spacing: 12px; font-weight: 500; }
   .demo-code { background: var(--amber-soft); color: var(--amber-dark); border-radius: 14px; padding: 12px 14px; font-size: 15px; line-height: 1.5; }
   .demo-code b { direction: ltr; unicode-bidi: isolate; font-size: 18px; letter-spacing: 2px; }
@@ -372,7 +375,13 @@
   <section class="screen" id="login">
     <h1 data-t="login.title"></h1>
     <p class="hint" data-t="login.hint"></p>
-    <input class="field" id="phone-input" type="tel" inputmode="tel" autocomplete="tel" placeholder="050-123-4567">
+    <div class="phone-row">
+      <select class="field country" id="country" onchange="updatePhonePlaceholder()">
+        <option value="IL">IL +972</option>
+        <option value="US">US +1</option>
+      </select>
+      <input class="field" id="phone-input" type="tel" inputmode="tel" autocomplete="tel-national">
+    </div>
     <p class="form-err" id="phone-err"></p>
     <button class="btn btn-primary" onclick="sendCode()" data-t="login.send"></button>
   </section>
@@ -701,6 +710,8 @@
     document.documentElement.dir = RTL.includes(l) ? 'rtl' : 'ltr';
     document.querySelectorAll('[data-t]').forEach(el => { el.textContent = t(el.dataset.t); });
     document.querySelectorAll('[data-t-ph]').forEach(el => { el.placeholder = t(el.dataset.tPh); });
+    document.getElementById('country').value = l === 'en' ? 'US' : 'IL';
+    updatePhonePlaceholder();
     go('welcome');
   }
 
@@ -708,11 +719,25 @@
 
   let sentCode = null;
 
+  // Supported countries. Numbers are typed in local format; `valid` checks the digits only.
+  const COUNTRIES = {
+    IL: { prefix: '+972', placeholder: '050-123-4567', trunk: /^0/, valid: d => /^0?\d{8,9}$/.test(d) },
+    US: { prefix: '+1', placeholder: '(201) 555-0123', trunk: /^\+?1[\s-]*/, valid: d => /^1?[2-9]\d{2}[2-9]\d{6}$/.test(d) }
+  };
+
+  function updatePhonePlaceholder() {
+    const c = COUNTRIES[document.getElementById('country').value];
+    document.getElementById('phone-input').placeholder = c.placeholder;
+    document.getElementById('phone-err').textContent = '';
+  }
+
   function sendCode() {
-    const raw = document.getElementById('phone-input').value.trim();
-    const digits = raw.replace(/\D/g, '');
+    const country = COUNTRIES[document.getElementById('country').value];
+    const local = document.getElementById('phone-input').value.trim();
+    const digits = local.replace(/\D/g, '');
+    const raw = country.prefix + ' ' + local.replace(country.trunk, '');
     const err = document.getElementById('phone-err');
-    if (digits.length < 9 || digits.length > 15 || /[^\d\s()+-]/.test(raw)) {
+    if (!country.valid(digits) || /[^\d\s()+-]/.test(local)) {
       err.textContent = t('login.badPhone');
       go('login');
       return;
