@@ -739,7 +739,8 @@
     'bar.camera': ['פרטי מצלמה בקובץ', 'Camera details in the file', 'بيانات الكاميرا في الملف', 'Данные камеры в файле'],
     'rp.heat':['מפת חום: אזורים שנראים כמו AI', 'Heatmap: areas that look AI-made', 'خريطة حرارية: مناطق تبدو مصنوعة بالذكاء الاصطناعي', 'Тепловая карта: области, похожие на ИИ'],
     'rp.heatNote': ['מסגרת אדומה = שני המנועים מצאו שם סימני AI. כתום = מנוע אחד חושד. זו הערכה לפי אזורים, לא סימון מדויק של כל פיקסל.', 'Red frame = both engines found AI traces there. Orange = one engine is suspicious. An estimate by area, not an exact pixel-by-pixel map.', 'إطار أحمر = وجد المحركان آثار ذكاء اصطناعي هناك. برتقالي = محرك واحد يشتبه. هذا تقدير حسب المنطقة وليس تحديدًا دقيقًا لكل بكسل.', 'Красная рамка = оба движка нашли там следы ИИ. Оранжевый = подозревает один движок. Это оценка по областям, а не точная карта пикселей.'],
-    'bar.patch': ['האזור הכי חשוד בתמונה', 'Most suspicious area', 'المنطقة الأكثر اشتباهًا', 'Самая подозрительная область'],
+    'sub.frames': ['נמצאו סימני AI ב-{n} מתוך {total} פריימים שנבדקו בסרטון.', 'AI traces found in {n} of {total} frames checked in the video.', 'وُجدت آثار ذكاء اصطناعي في {n} من {total} إطارات تم فحصها في الفيديو.', 'Следы ИИ найдены в {n} из {total} проверенных кадров видео.'],
+    'bar.patch':['האזור הכי חשוד בתמונה', 'Most suspicious area', 'المنطقة الأكثر اشتباهًا', 'Самая подозрительная область'],
     'sub.patch':['התמונה כולה נראית אמיתית, אבל באזור קטן בה נמצאו סימני AI חזקים. היזהר.', 'The image looks real overall, but strong AI traces were found in a small area. Be careful.', 'تبدو الصورة حقيقية إجمالًا، لكن وُجدت آثار قوية للذكاء الاصطناعي في منطقة صغيرة. كن حذرًا.', 'В целом снимок выглядит настоящим, но в небольшой области найдены явные следы ИИ. Будьте осторожны.'],
     'scan.heat': ['מסמן אזורים חשודים...', 'Marking suspicious areas...', 'جارٍ تحديد المناطق المشبوهة...', 'Отмечаем подозрительные области...'],
     'rp.none':['לא נמצאו קטעים חשודים', 'No suspicious parts found', 'لم يتم العثور على أجزاء مريبة', 'Подозрительных фрагментов нет'],
@@ -952,7 +953,7 @@
   const VOICE_MODEL_DIR = 'voice-model/';
   const VOICE_WINDOWS = 5;
   const TEXT_MODEL = 'onnx-community/tmr-ai-text-detector-ONNX'; // labels: human / ai
-  const VIDEO_FRAMES = 6;
+  const VIDEO_FRAMES = 8;
 
   let transformers = null;
   const pipes = {};
@@ -1206,7 +1207,8 @@
   // Tested on 50 images (25 AI, 25 real) plus a real user's AI patio photo:
   // - 2 of 3 engines agree → "fake".
   // - Only 1 engine suspicious → "not sure", unless the others are confidently real
-  //   (Community Forensics under 5%, second engine under 70%, no suspicious patch) → "real".
+  //   (Community Forensics under 5%, second engine under 70%, no suspicious patch) and the main
+  //   engine isn't very sure (under 90%) → "real". (Sora video frames: main 99-100%, the others ~0.)
   // - A suspicious full-resolution patch alone → "not sure".
   // Never show 0% or 100%: no detector is certain.
   function combine({ main, second, third }, patchSuspicious = false) {
@@ -1214,7 +1216,7 @@
     const scores = [main, second, third];
     const votes = scores.filter(p => p >= 0.5);
     if (votes.length >= 2) return { pct: clamp(Math.max(70, votes.reduce((a, b) => a + b) / votes.length * 100)), verdict: 'fake' };
-    if (votes.length === 1 && third < 0.05 && second < 0.7 && !patchSuspicious) return { pct: clamp(Math.min(30, main * 100)), verdict: 'real' };
+    if (votes.length === 1 && third < 0.05 && second < 0.7 && main < 0.9 && !patchSuspicious) return { pct: clamp(Math.min(30, main * 100)), verdict: 'real' };
     if (votes.length === 1) return { pct: clamp(31 + (votes[0] - 0.5) * 2 * 38), verdict: 'maybe', split: true };
     if (patchSuspicious) return { pct: 55, verdict: 'maybe', patch: true };
     return { pct: clamp(Math.min(30, scores.reduce((a, b) => a + b) / scores.length * 100)), verdict: 'real' };
@@ -1372,17 +1374,26 @@
         setProgress(t('scan.frame', { i: i + 1, n: frames.length }));
         scores.push(await scoreImage(frames[i].url));
       }
-      const avg = key => scores.reduce((a, s) => a + s[key], 0) / scores.length;
-      const c = combine({ main: avg('main'), second: avg('second'), third: avg('third') });
+      // Judge each frame on its own, then the video by how many frames look AI. Averaging the engines
+      // over all frames hid AI videos: on Sora clips the main engine said 99-100% on nearly every frame,
+      // but the average with the other two engines came out "not sure" or even "real".
+      // Tested on 2 Sora videos and 3 real videos (8 frames each): all frames of the real videos came out real.
+      const perFrame = scores.map(s => combine(s));
+      const fakeFrames = perFrame.filter(c => c.verdict === 'fake').length;
+      const maybeFrames = perFrame.filter(c => c.verdict === 'maybe').length;
+      const verdict = fakeFrames >= Math.max(2, Math.ceil(frames.length / 4)) ? 'fake'
+        : fakeFrames >= 1 || maybeFrames >= 2 ? 'maybe' : 'real';
+      const meanPct = Math.round(perFrame.reduce((a, c) => a + c.pct, 0) / perFrame.length);
+      const pct = verdict === 'fake' ? Math.max(70, meanPct) : verdict === 'maybe' ? Math.min(69, Math.max(31, meanPct)) : Math.min(30, meanPct);
       const half = duration / frames.length / 2;
-      const flagged = frames.map((f, i) => ({ ...f, p: Math.round(scores[i].main * 100) })).filter(f => f.p >= 50);
-      showResult(buildResult('video', file.name, label ? 98 : c.pct, {
-        verdict: c.verdict,
-        ...(c.split ? { proSub: t('sub.split') } : {}),
+      const flagged = frames.map((f, i) => ({ ...f, c: perFrame[i] })).filter(f => f.c.verdict !== 'real');
+      showResult(buildResult('video', file.name, label ? 98 : pct, {
+        verdict,
+        proSub: t('sub.frames', { n: fakeFrames + maybeFrames, total: frames.length }),
         total: duration,
         segments: flagged.map(f => [Math.max(0, f.t - half), Math.min(duration, f.t + half)]),
-        marks: flagged.map(f => [f.t, t('mark.frame', { p: f.p })]),
-        bars: frames.map((f, i) => [t('bar.frame', { t: fmtTime(f.t) }), combine(scores[i]).pct]),
+        marks: flagged.map(f => [f.t, t('mark.frame', { p: f.c.pct })]),
+        bars: frames.map((f, i) => [t('bar.frame', { t: fmtTime(f.t) }), perFrame[i].pct]),
         ...labelled
       }));
     } catch (e) {
