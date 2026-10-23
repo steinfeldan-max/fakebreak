@@ -307,6 +307,11 @@
   .marks { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
   .marks div { display: flex; justify-content: space-between; gap: 8px; }
   .marks .t { direction: ltr; color: var(--coral); font-weight: 500; }
+  .heat { position: relative; border-radius: 12px; overflow: hidden; line-height: 0; }
+  .heat img { width: 100%; display: block; }
+  .heat-grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); direction: ltr; }
+  .heat-grid div { border: 1px solid rgba(255, 255, 255, .15); }
+  .heat-note { font-size: 12px; color: #AFA9EC; margin-top: 8px; line-height: 1.5; }
   .bar-row { margin-bottom: 10px; }
   .bar-row:last-child { margin-bottom: 0; }
   .bar-head { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
@@ -533,6 +538,12 @@
       </div>
     </div>
 
+    <div class="card" id="rp-heat-card">
+      <h2 data-t="rp.heat"></h2>
+      <div class="heat"><img id="rp-heat-img" alt=""><div class="heat-grid" id="rp-heat-grid"></div></div>
+      <p class="heat-note" data-t="rp.heatNote"></p>
+    </div>
+
     <div class="card" id="rp-timeline-card">
       <h2 data-t="rp.where"></h2>
       <div class="timeline" id="rp-timeline"></div>
@@ -552,7 +563,7 @@
     <p class="disclaimer" data-t="rp.disclaimer"></p>
   </section>
 
-  <input type="file" id="file-input" accept="image/*,video/*" hidden>
+  <input type="file" id="file-input" accept="image/*,video/*,audio/*,.opus,.ogg,.m4a" hidden>
   <div class="toast" id="toast"></div>
 </div>
 
@@ -591,11 +602,15 @@
     'sw.pro': ['תצוגה מפורטת', 'Detailed view', 'عرض مفصّل', 'Подробный вид'],
     'sw.simple': ['תצוגה פשוטה', 'Simple view', 'عرض بسيط', 'Простой вид'],
     'home.simpleTitle': ['מה תרצה לבדוק?', 'What do you want to check?', 'ماذا تريد أن تفحص؟', 'Что хотите проверить?'],
-    'home.drop': ['לחץ כאן כדי לבחור סרטון או תמונה', 'Tap here to choose a video or photo', 'اضغط هنا لاختيار فيديو أو صورة', 'Нажмите, чтобы выбрать видео или фото'],
+    'home.drop': ['לחץ כאן כדי לבחור סרטון, תמונה או הודעה קולית', 'Tap here to choose a video, photo or voice message', 'اضغط هنا لاختيار فيديو أو صورة أو رسالة صوتية', 'Нажмите, чтобы выбрать видео, фото или голосовое'],
+    'voice.st': ['עדיין לא יודעים לבדוק קול', "We can't check voices yet", 'لا يمكننا فحص الأصوات بعد', 'Пока не умеем проверять голос'],
+    'voice.sl': ['קולות מזויפים קשים מאוד לזיהוי. אם מבקשים ממך כסף או סוד, נתק והתקשר בעצמך למספר שאתה מכיר.', 'Fake voices are very hard to detect. If someone asks for money or secrets, hang up and call them back on a number you know.', 'الأصوات المزيفة صعبة الكشف جدًا. إذا طلب أحدهم مالًا أو أسرارًا، أغلق الخط واتصل به على رقم تعرفه.', 'Поддельные голоса очень трудно распознать. Если просят денег или секретов — положите трубку и перезвоните на известный вам номер.'],
+    'voice.pt': ['לא נבדק', 'Not checked', 'لم يُفحص', 'Не проверено'],
+    'voice.ps': ['ניסינו מנוע חינמי לזיהוי קול, והוא תפס רק 1 מתוך 10 קולות מזויפים, אז לא נציג תוצאה שעלולה להטעות. כן בדקנו אם יש בקובץ סימון AI. טיפ: קבעו מילת קוד משפחתית.', "We tried a free voice-detection engine and it caught only 1 of 10 fake voices, so we won't show a result that could mislead you. We did check the file for an AI label. Tip: agree on a family code word.", 'جرّبنا محرك كشف صوت مجاني فالتقط 1 فقط من 10 أصوات مزيفة، لذا لن نعرض نتيجة قد تضللك. لكننا فحصنا الملف بحثًا عن علامة ذكاء اصطناعي. نصيحة: اتفقوا على كلمة سر عائلية.', 'Мы попробовали бесплатный движок для голоса: он распознал только 1 из 10 поддельных голосов, поэтому мы не покажем результат, который может ввести в заблуждение. Метку ИИ в файле мы проверили. Совет: договоритесь о семейном кодовом слове.'],
     'home.textBtn': ['בדיקת הודעה או טקסט', 'Check a message or text', 'فحص رسالة أو نص', 'Проверить сообщение или текст'],
     'home.proTitle': ['סריקה חדשה', 'New scan', 'فحص جديد', 'Новая проверка'],
     'home.upload': ['העלה קובץ', 'Upload file', 'رفع ملف', 'Загрузить файл'],
-    'home.uploadSub': ['וידאו · תמונה', 'Video · Photo', 'فيديو · صورة', 'Видео · Фото'],
+    'home.uploadSub': ['וידאו · תמונה · קול', 'Video · Photo · Voice', 'فيديو · صورة · صوت', 'Видео · Фото · Голос'],
     'home.text': ['טקסט', 'Text', 'نص', 'Текст'],
     'home.textSub': ['הודעה · כתבה', 'Message · Article', 'رسالة · مقال', 'Сообщение · Статья'],
     'stat.scans': ['סריקות', 'Scans', 'عمليات فحص', 'Проверок'],
@@ -658,7 +673,10 @@
     'rs.shareWarn': ['שלח אזהרה למשפחה', 'Warn your family', 'أرسل تحذيرًا للعائلة', 'Предупредить семью'],
     'rs.again': ['לבדוק משהו אחר', 'Check something else', 'افحص شيئًا آخر', 'Проверить другое'],
     'rp.where': ['איפה זוהה הזיוף', 'Where the fake was found', 'أين تم كشف التزييف', 'Где найдена подделка'],
-    'rp.none': ['לא נמצאו קטעים חשודים', 'No suspicious parts found', 'لم يتم العثور على أجزاء مريبة', 'Подозрительных фрагментов нет'],
+    'rp.heat': ['מפת חום: אזורים שנראים כמו AI', 'Heatmap: areas that look AI-made', 'خريطة حرارية: مناطق تبدو مصنوعة بالذكاء الاصطناعي', 'Тепловая карта: области, похожие на ИИ'],
+    'rp.heatNote': ['אדום = חשוד יותר. זו הערכה גסה לפי אזורים, לא סימון מדויק של כל פיקסל.', 'Red = more suspicious. A rough estimate by area, not an exact pixel-by-pixel map.', 'الأحمر = أكثر اشتباهًا. هذا تقدير تقريبي حسب المنطقة وليس تحديدًا دقيقًا لكل بكسل.', 'Красный = подозрительнее. Это грубая оценка по областям, а не точная карта пикселей.'],
+    'scan.heat': ['מסמן אזורים חשודים...', 'Marking suspicious areas...', 'جارٍ تحديد المناطق المشبوهة...', 'Отмечаем подозрительные области...'],
+    'rp.none':['לא נמצאו קטעים חשודים', 'No suspicious parts found', 'لم يتم العثور على أجزاء مريبة', 'Подозрительных фрагментов нет'],
     'rp.details': ['פירוט הבדיקה', 'Check details', 'تفاصيل الفحص', 'Детали проверки'],
     'rp.frames': ['ציון AI לכל פריים', 'AI score per frame', 'نسبة الذكاء الاصطناعي لكل إطار', 'Оценка ИИ по кадрам'],
     'rp.share': ['שתף תוצאה', 'Share result', 'شارك النتيجة', 'Поделиться'],
@@ -851,7 +869,8 @@
     ['OpenAI', 'OpenAI'], ['DALL-E', 'OpenAI'], ['DALL·E', 'OpenAI'], ['ChatGPT', 'OpenAI'],
     ['Midjourney', 'Midjourney'], ['Adobe Firefly', 'Adobe Firefly'], ['Stable Diffusion', 'Stable Diffusion'],
     ['ComfyUI', 'Stable Diffusion'], ['Negative prompt:', 'Stable Diffusion'], ['NovelAI', 'NovelAI'],
-    ['Leonardo.Ai', 'Leonardo'], ['Ideogram', 'Ideogram'], ['Microsoft Designer', 'Microsoft'], ['Bing Image Creator', 'Microsoft']
+    ['Leonardo.Ai', 'Leonardo'], ['Ideogram', 'Ideogram'], ['Microsoft Designer', 'Microsoft'], ['Bing Image Creator', 'Microsoft'],
+    ['ElevenLabs', 'ElevenLabs']
   ];
   const TEXT_MODEL = 'onnx-community/tmr-ai-text-detector-ONNX'; // labels: human / ai
   const VIDEO_FRAMES = 6;
@@ -948,20 +967,21 @@
     return human ? 1 - human.score : 0.5;
   }
 
-  // Draw an image into an N×N canvas and return its RGB pixels as a CHW float tensor.
-  // `cover` keeps the aspect ratio and center-crops; otherwise the image is stretched.
-  function toTensor(img, N, cover, mean = [0, 0, 0], std = [1, 1, 1]) {
+  // Draw a region of an image ([sx, sy, sw, sh], default: all of it) into an N×N canvas and return
+  // its RGB pixels as a CHW float tensor. `cover` keeps the aspect ratio and center-crops; otherwise it stretches.
+  function toTensor(img, N, cover, mean = [0, 0, 0], std = [1, 1, 1], region = null) {
+    const [sx, sy, sw, sh] = region || [0, 0, img.naturalWidth, img.naturalHeight];
     const canvas = document.createElement('canvas');
     canvas.width = N;
     canvas.height = N;
     const ctx = canvas.getContext('2d');
     ctx.imageSmoothingQuality = 'high';
     if (cover) {
-      const scale = N / Math.min(img.naturalWidth, img.naturalHeight);
-      const w = img.naturalWidth * scale, h = img.naturalHeight * scale;
-      ctx.drawImage(img, (N - w) / 2, (N - h) / 2, w, h);
+      const scale = N / Math.min(sw, sh);
+      const w = sw * scale, h = sh * scale;
+      ctx.drawImage(img, sx, sy, sw, sh, (N - w) / 2, (N - h) / 2, w, h);
     } else {
-      ctx.drawImage(img, 0, 0, N, N);
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, N, N);
     }
     const px = ctx.getImageData(0, 0, N, N).data;
     const data = new Float32Array(3 * N * N);
@@ -984,13 +1004,33 @@
   }
 
   // Combine the two engines into a displayed percentage and verdict.
-  // The main engine decides; if it says "real" but the second engine is suspicious, we answer "not sure".
+  // "Fake" needs both engines to agree; if only one is suspicious we answer "not sure".
+  // (Phone selfies with beauty/portrait processing can fool one engine on its own.)
   // Never show 0% or 100%: no detector is certain.
   function combine({ main, second }) {
     const clamp = p => Math.min(98, Math.max(2, Math.round(p)));
-    if (main >= 0.5) return { pct: clamp(Math.max(70, main * 100)), verdict: 'fake' };
-    if (second >= 0.5) return { pct: clamp(31 + (second - 0.5) * 2 * 38), verdict: 'maybe', split: true };
+    if (main >= 0.5 && second >= 0.5) return { pct: clamp(Math.max(70, (main + second) / 2 * 100)), verdict: 'fake' };
+    if (main >= 0.5 || second >= 0.5) return { pct: clamp(31 + (Math.max(main, second) - 0.5) * 2 * 38), verdict: 'maybe', split: true };
     return { pct: clamp(Math.min(30, main * 100)), verdict: 'real' };
+  }
+
+  // Heatmap: score overlapping tiles of the image with the second engine (fast) to show which areas look AI.
+  // Returns a 3×3 grid of AI probabilities, row by row.
+  async function heatmap(src) {
+    const session = await getPeSession();
+    const img = new Image();
+    img.src = src;
+    await img.decode();
+    const W = img.naturalWidth, H = img.naturalHeight, tw = W / 2, th = H / 2;
+    const cells = [];
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        const region = [c * (W - tw) / 2, r * (H - th) / 2, tw, th];
+        const out = await session.run({ [session.inputNames[0]]: toTensor(img, 256, true, undefined, undefined, region) });
+        cells.push(softmaxFirst(out[session.outputNames[0]].data));
+      }
+    }
+    return cells;
   }
 
   // Grab evenly spaced frames from a video file as JPEG data URLs.
@@ -1035,7 +1075,8 @@
   }
 
   async function analyzeFile(file) {
-    const kind = file.type.startsWith('video') ? 'video' : 'image';
+    const isAudio = file.type.startsWith('audio') || /\.(opus|ogg|m4a|mp3|wav|aac)$/i.test(file.name);
+    const kind = isAudio ? 'voice' : file.type.startsWith('video') ? 'video' : 'image';
     showScanning(file.name, t(kind === 'video' ? 'scan.video' : 'scan.connecting'));
     try {
       // 1. AI label inside the file: when present, it's the most reliable signal there is.
@@ -1046,15 +1087,30 @@
         proSub: t('sub.label', { src: label })
       } : {};
 
+      // Voice: the free in-browser voice engine we tested caught only 1 of 10 cloned voices,
+      // so we only trust the AI label and otherwise say honestly that we can't tell.
+      if (kind === 'voice') {
+        showResult(buildResult('voice', file.name, label ? 98 : null, label ? { verdict: 'fake', ...labelled } : {
+          verdict: 'maybe',
+          simpleTitle: t('voice.st'),
+          simpleLine: t('voice.sl'),
+          proTitle: t('voice.pt'),
+          proSub: t('voice.ps')
+        }));
+        return;
+      }
+
       if (kind === 'image') {
         const url = URL.createObjectURL(file);
         const s = await scoreImage(url);
-        URL.revokeObjectURL(url);
+        setProgress(t('scan.heat'));
+        const heat = await heatmap(url);
         const c = combine(s);
         const bars = [[t('bar.engine1'), Math.round(s.main * 100)], [t('bar.engine2'), Math.round(s.second * 100)]];
         if (label) bars.unshift([t('bar.label'), 100]);
+        if (current && current.preview) URL.revokeObjectURL(current.preview);
         showResult(buildResult('image', file.name, label ? 98 : c.pct, {
-          verdict: c.verdict, bars, ...(c.split ? { proSub: t('sub.split') } : {}), ...labelled
+          verdict: c.verdict, bars, preview: url, heat, ...(c.split ? { proSub: t('sub.split') } : {}), ...labelled
         }));
         return;
       }
@@ -1194,13 +1250,23 @@
     ring.style.transition = 'none';
     ring.setAttribute('stroke', COLORS[d.verdict]);
     ring.setAttribute('stroke-dasharray', '0 100');
-    document.getElementById('rp-pct').textContent = d.pct + '%';
+    document.getElementById('rp-pct').textContent = d.pct == null ? '?' : d.pct + '%';
     document.getElementById('rp-title').textContent = d.proTitle;
     document.getElementById('rp-title').style.color = COLORS[d.verdict];
     document.getElementById('rp-sub').textContent = d.proSub;
     document.getElementById('rp-badge').innerHTML = d.live
       ? `<span class="badge-live">${t('badge.live')}</span>`
       : `<span class="badge-demo">${t('badge.demo')}</span>`;
+
+    const heatCard = document.getElementById('rp-heat-card');
+    heatCard.style.display = d.heat ? '' : 'none';
+    if (d.heat) {
+      document.getElementById('rp-heat-img').src = d.preview;
+      document.getElementById('rp-heat-grid').innerHTML = d.heat.map(p => {
+        const color = p >= 0.5 ? `rgba(226, 75, 74, ${(0.25 + (p - 0.5)).toFixed(2)})` : 'rgba(93, 202, 165, 0.12)';
+        return `<div style="background:${color}"></div>`;
+      }).join('');
+    }
 
     const tlCard = document.getElementById('rp-timeline-card');
     tlCard.style.display = d.total ? '' : 'none';
@@ -1220,7 +1286,8 @@
       });
     }
 
-    document.getElementById('rp-bars-title').textContent = t(d.kind === 'video' && d.live ? 'rp.frames' : 'rp.details');
+    document.getElementById('rp-bars').parentElement.style.display = d.bars.length ? '' : 'none';
+    document.getElementById('rp-bars-title').textContent =t(d.kind === 'video' && d.live ? 'rp.frames' : 'rp.details');
     document.getElementById('rp-bars').innerHTML = d.bars.map(([name, p]) => {
       const c = p >= 70 ? COLORS.fake : p >= 40 ? COLORS.maybe : COLORS.real;
       return `<div class="bar-row"><div class="bar-head"><span>${name}</span><span class="p">${p}%</span></div>` +
@@ -1230,7 +1297,7 @@
     go('result-pro');
     requestAnimationFrame(() => setTimeout(() => {
       ring.style.transition = 'stroke-dasharray .9s ease-out';
-      ring.setAttribute('stroke-dasharray', d.pct + ' 100');
+      ring.setAttribute('stroke-dasharray', (d.pct || 0) + ' 100');
     }, 50));
   }
 
