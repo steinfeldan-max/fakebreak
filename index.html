@@ -716,7 +716,8 @@
     'bar.label': ['סימון AI בתוך הקובץ', 'AI label inside the file', 'علامة ذكاء اصطناعي داخل الملف', 'Метка ИИ внутри файла'],
     'sub.label': ['בתוך הקובץ נמצא סימון דיגיטלי שהוא נוצר ב-AI ({src}).', 'The file carries a digital label saying it was made with AI ({src}).', 'يحمل الملف علامة رقمية تفيد بأنه صُنع بالذكاء الاصطناعي ({src}).', 'В файле есть цифровая метка, что он создан ИИ ({src}).'],
     'line.label': ['בתוך הקובץ יש סימון שהוא נוצר על ידי מחשב (AI). אל תאמין לו ואל תעביר אותו הלאה.', "The file itself is labeled as made by a computer (AI). Don't trust it or pass it on.", 'الملف نفسه موسوم بأنه من صنع حاسوب (ذكاء اصطناعي). لا تصدقه ولا تعيد إرساله.', 'Сам файл помечен как созданный компьютером (ИИ). Не верьте ему и не пересылайте.'],
-    'sub.split': ['המנועים לא מסכימים: אחד לא מצא סימנים, והשני חושד. היזהר.', 'The engines disagree: one found no signs, the other is suspicious. Be careful.', 'المحركان غير متفقين: أحدهما لم يجد علامات والآخر يشتبه. كن حذرًا.', 'Движки расходятся: один не нашёл признаков, другой подозревает. Будьте осторожны.'],
+    'sub.split': ['המנועים לא מסכימים: אחד חושד, והאחרים לא מצאו סימנים. היזהר.', 'The engines disagree: one is suspicious, the others found no signs. Be careful.', 'المحركات غير متفقة: أحدها يشتبه والبقية لم تجد علامات. كن حذرًا.', 'Движки расходятся: один подозревает, остальные признаков не нашли. Будьте осторожны.'],
+    'bar.engine3': ['מנוע 3: Community Forensics (4,803 מחוללים)', 'Engine 3: Community Forensics (4,803 generators)', 'المحرك 3: Community Forensics (4,803 مولّدات)', 'Движок 3: Community Forensics (4 803 генератора)'],
     'bar.txtAi': ['סגנון כתיבה של AI', 'AI writing style', 'أسلوب كتابة آلي', 'Стиль письма ИИ'],
     'bar.txtHuman': ['סגנון כתיבה אנושי', 'Human writing style', 'أسلوب كتابة بشري', 'Человеческий стиль'],
     'bar.frame': ['פריים בשנייה {t}', 'Frame at {t}', 'الإطار عند {t}', 'Кадр {t}'],
@@ -919,6 +920,12 @@
   // GPT-Image, Imagen 4). Output 0 = fake, 1 = real. Input: shorter side 256, center crop, RGB in [0, 1].
   // On its own it flags too many real photos, so it only turns a "real" verdict into "not sure".
   const PE_MODEL_URL = 'https://huggingface.co/Deckard618/imdet/resolve/main/pe_small/model.onnx';
+  // Third engine: Community Forensics ViT (CVPR 2025, trained on 4,803 generators). One logit, sigmoid = fake.
+  // Input: shorter side 440, center crop 384, CLIP normalization. Few false alarms on real photos.
+  // We use the FP32 export: the card warns its quantized versions can drift a lot.
+  const CF_MODEL_URL = 'https://huggingface.co/buildborderless/CommunityForensics-DeepfakeDet-ViT/resolve/main/onnx/model.onnx';
+  const CF_MEAN = [0.4815, 0.4578, 0.4082];
+  const CF_STD = [0.2686, 0.2613, 0.2758];
 
   // Text found inside files made by AI tools (IPTC/C2PA "digital source type", generator names, SD parameters).
   const AI_MARKERS = [
@@ -938,6 +945,7 @@
   let ort = null;
   let imageSession = null;
   let peSession = null;
+  let cfSession = null;
 
   function downloadProgress(loaded, total) {
     setProgress(t('scan.download', { p: Math.round(loaded / total * 100) }));
@@ -999,6 +1007,11 @@
   async function getPeSession() {
     if (!peSession) peSession = loadSession(PE_MODEL_URL).catch(e => { peSession = null; throw e; });
     return peSession;
+  }
+
+  async function getCfSession() {
+    if (!cfSession) cfSession = loadSession(CF_MODEL_URL).catch(e => { cfSession = null; throw e; });
+    return cfSession;
   }
 
   function softmaxFirst(logits) {
@@ -1089,27 +1102,42 @@
     return new ort.Tensor('float32', data, [1, 3, N, N]);
   }
 
-  // AI probability (0..1) from both engines: { main, second }.
+  // AI probability (0..1) from all three engines: { main, second, third }.
   async function scoreImage(src) {
-    const [main, second] = await Promise.all([getImageSession(), getPeSession()]);
+    const [main, second, third] = await Promise.all([getImageSession(), getPeSession(), getCfSession()]);
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.src = src;
     await img.decode();
+    // Community Forensics wants the shorter side at 440 then a 384 center crop: same as a 384 "cover" of a 440/384-zoomed region.
+    const W = img.naturalWidth, H = img.naturalHeight, k = 384 / 440;
+    const cfRegion = [(W - W * k) / 2, (H - H * k) / 2, W * k, H * k];
     const a = await main.run({ pixel_values: toTensor(img, IMAGE_SIZE, false, IMAGE_MEAN, IMAGE_STD) });
     const b = await second.run({ [second.inputNames[0]]: toTensor(img, 256, true) });
-    return { main: softmaxFirst(a.logits.data), second: softmaxFirst(b[second.outputNames[0]].data) };
+    const c = await third.run({ [third.inputNames[0]]: toTensor(img, 384, true, CF_MEAN, CF_STD, cfRegion) });
+    return {
+      main: softmaxFirst(a.logits.data),
+      second: softmaxFirst(b[second.outputNames[0]].data),
+      third: 1 / (1 + Math.exp(-c[third.outputNames[0]].data[0]))
+    };
   }
 
-  // Combine the two engines into a displayed percentage and verdict.
-  // "Fake" needs both engines to agree; if only one is suspicious we answer "not sure".
-  // (Phone selfies with beauty/portrait processing can fool one engine on its own.)
+  // Combine the three engines (and the patch scan) into a displayed percentage and verdict.
+  // Tested on 50 images (25 AI, 25 real) plus a real user's AI patio photo:
+  // - 2 of 3 engines agree → "fake".
+  // - Only 1 engine suspicious → "not sure", unless the others are confidently real
+  //   (Community Forensics under 5%, second engine under 70%, no suspicious patch) → "real".
+  // - A suspicious full-resolution patch alone → "not sure".
   // Never show 0% or 100%: no detector is certain.
-  function combine({ main, second }) {
+  function combine({ main, second, third }, patchSuspicious = false) {
     const clamp = p => Math.min(98, Math.max(2, Math.round(p)));
-    if (main >= 0.5 && second >= 0.5) return { pct: clamp(Math.max(70, (main + second) / 2 * 100)), verdict: 'fake' };
-    if (main >= 0.5 || second >= 0.5) return { pct: clamp(31 + (Math.max(main, second) - 0.5) * 2 * 38), verdict: 'maybe', split: true };
-    return { pct: clamp(Math.min(30, main * 100)), verdict: 'real' };
+    const scores = [main, second, third];
+    const votes = scores.filter(p => p >= 0.5);
+    if (votes.length >= 2) return { pct: clamp(Math.max(70, votes.reduce((a, b) => a + b) / votes.length * 100)), verdict: 'fake' };
+    if (votes.length === 1 && third < 0.05 && second < 0.7 && !patchSuspicious) return { pct: clamp(Math.min(30, main * 100)), verdict: 'real' };
+    if (votes.length === 1) return { pct: clamp(31 + (votes[0] - 0.5) * 2 * 38), verdict: 'maybe', split: true };
+    if (patchSuspicious) return { pct: 55, verdict: 'maybe', patch: true };
+    return { pct: clamp(Math.min(30, scores.reduce((a, b) => a + b) / scores.length * 100)), verdict: 'real' };
   }
 
   // Patch scan at full resolution. Shrinking a big image to 256px for the whole-image check can wipe out
@@ -1215,14 +1243,10 @@
         setProgress(t('scan.heat'));
         const patches = await patchScan(url);
         const heat = patches.cells;
-        let c = combine(s);
-        let proSub = c.split ? t('sub.split') : null;
-        if (patches.suspicious && c.verdict === 'real') {
-          c = { pct: 55, verdict: 'maybe' };
-          proSub = t('sub.patch');
-        }
+        let c = combine(s, patches.suspicious);
+        let proSub = c.split ? t('sub.split') : c.patch ? t('sub.patch') : null;
         const bars = [[t('bar.engine1'), Math.round(s.main * 100)], [t('bar.engine2'), Math.round(s.second * 100)],
-          [t('bar.patch'), Math.round(Math.max(...heat.map(h => h.p)) * 100)]];
+          [t('bar.engine3'), Math.round(s.third * 100)], [t('bar.patch'), Math.round(Math.max(...heat.map(h => h.p)) * 100)]];
 
         // 2. Proof of a real camera: camera credentials settle it; plain EXIF camera details move the verdict one step toward "real".
         const camera = label ? null : cameraModel(buf);
@@ -1250,7 +1274,7 @@
         scores.push(await scoreImage(frames[i].url));
       }
       const avg = key => scores.reduce((a, s) => a + s[key], 0) / scores.length;
-      const c = combine({ main: avg('main'), second: avg('second') });
+      const c = combine({ main: avg('main'), second: avg('second'), third: avg('third') });
       const half = duration / frames.length / 2;
       const flagged = frames.map((f, i) => ({ ...f, p: Math.round(scores[i].main * 100) })).filter(f => f.p >= 50);
       showResult(buildResult('video', file.name, label ? 98 : c.pct, {
