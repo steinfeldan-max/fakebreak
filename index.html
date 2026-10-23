@@ -643,8 +643,12 @@
     'text.nonEn.line': ['עדיין קשה לנו לבדוק טקסט בשפה הזאת. אל תסמוך על התוצאה הזאת.', "We can't reliably check text in this language yet. Don't rely on this result.", 'لا يمكننا بعد فحص النصوص بهذه اللغة بدقة. لا تعتمد على هذه النتيجة.', 'Мы пока не умеем надёжно проверять текст на этом языке. Не полагайтесь на результат.'],
     'text.nonEn.sub': ['המנוע אומן על אנגלית, ולכן בשפות אחרות התוצאה לא אמינה. נשפר את זה בהמשך.', "The engine was trained on English, so results in other languages aren't reliable yet.", 'تم تدريب المحرك على الإنجليزية، لذا النتائج بلغات أخرى غير موثوقة بعد.', 'Движок обучен на английском, поэтому для других языков результат пока ненадёжен.'],
 
-    'bar.imgAi': ['סימני יצירה ב-AI', 'Signs of AI generation', 'علامات توليد بالذكاء الاصطناعي', 'Признаки генерации ИИ'],
-    'bar.imgReal': ['סימנים לצילום אמיתי', 'Signs of a real photo', 'علامات صورة حقيقية', 'Признаки настоящего фото'],
+    'bar.engine1': ['מנוע 1: סימני יצירה ב-AI', 'Engine 1: signs of AI generation', 'المحرك 1: علامات توليد بالذكاء الاصطناعي', 'Движок 1: признаки генерации ИИ'],
+    'bar.engine2': ['מנוע 2: דפוסים של מחוללי AI חדשים', 'Engine 2: patterns of newer AI generators', 'المحرك 2: أنماط مولدات الذكاء الاصطناعي الحديثة', 'Движок 2: признаки новых генераторов ИИ'],
+    'bar.label': ['סימון AI בתוך הקובץ', 'AI label inside the file', 'علامة ذكاء اصطناعي داخل الملف', 'Метка ИИ внутри файла'],
+    'sub.label': ['בתוך הקובץ נמצא סימון דיגיטלי שהוא נוצר ב-AI ({src}).', 'The file carries a digital label saying it was made with AI ({src}).', 'يحمل الملف علامة رقمية تفيد بأنه صُنع بالذكاء الاصطناعي ({src}).', 'В файле есть цифровая метка, что он создан ИИ ({src}).'],
+    'line.label': ['בתוך הקובץ יש סימון שהוא נוצר על ידי מחשב (AI). אל תאמין לו ואל תעביר אותו הלאה.', "The file itself is labeled as made by a computer (AI). Don't trust it or pass it on.", 'الملف نفسه موسوم بأنه من صنع حاسوب (ذكاء اصطناعي). لا تصدقه ولا تعيد إرساله.', 'Сам файл помечен как созданный компьютером (ИИ). Не верьте ему и не пересылайте.'],
+    'sub.split': ['המנועים לא מסכימים: אחד לא מצא סימנים, והשני חושד. היזהר.', 'The engines disagree: one found no signs, the other is suspicious. Be careful.', 'المحركان غير متفقين: أحدهما لم يجد علامات والآخر يشتبه. كن حذرًا.', 'Движки расходятся: один не нашёл признаков, другой подозревает. Будьте осторожны.'],
     'bar.txtAi': ['סגנון כתיבה של AI', 'AI writing style', 'أسلوب كتابة آلي', 'Стиль письма ИИ'],
     'bar.txtHuman': ['סגנון כתיבה אנושי', 'Human writing style', 'أسلوب كتابة بشري', 'Человеческий стиль'],
     'bar.frame': ['פריים בשנייה {t}', 'Frame at {t}', 'الإطار عند {t}', 'Кадр {t}'],
@@ -835,6 +839,20 @@
   const IMAGE_SIZE = 256;
   const IMAGE_MEAN = [0.485, 0.456, 0.406];
   const IMAGE_STD = [0.229, 0.224, 0.225];
+  // Second engine: Perception Encoder classifier trained on the newest generators (Nano Banana Pro, FLUX.2,
+  // GPT-Image, Imagen 4). Output 0 = fake, 1 = real. Input: shorter side 256, center crop, RGB in [0, 1].
+  // On its own it flags too many real photos, so it only turns a "real" verdict into "not sure".
+  const PE_MODEL_URL = 'https://huggingface.co/Deckard618/imdet/resolve/main/pe_small/model.onnx';
+
+  // Text found inside files made by AI tools (IPTC/C2PA "digital source type", generator names, SD parameters).
+  const AI_MARKERS = [
+    ['compositeWithTrainedAlgorithmicMedia', 'Content Credentials'], ['trainedAlgorithmicMedia', 'Content Credentials'],
+    ['Made with Google AI', 'Google'], ['SynthID', 'Google'],
+    ['OpenAI', 'OpenAI'], ['DALL-E', 'OpenAI'], ['DALL·E', 'OpenAI'], ['ChatGPT', 'OpenAI'],
+    ['Midjourney', 'Midjourney'], ['Adobe Firefly', 'Adobe Firefly'], ['Stable Diffusion', 'Stable Diffusion'],
+    ['ComfyUI', 'Stable Diffusion'], ['Negative prompt:', 'Stable Diffusion'], ['NovelAI', 'NovelAI'],
+    ['Leonardo.Ai', 'Leonardo'], ['Ideogram', 'Ideogram'], ['Microsoft Designer', 'Microsoft'], ['Bing Image Creator', 'Microsoft']
+  ];
   const TEXT_MODEL = 'onnx-community/tmr-ai-text-detector-ONNX'; // labels: human / ai
   const VIDEO_FRAMES = 6;
 
@@ -842,6 +860,7 @@
   const pipes = {};
   let ort = null;
   let imageSession = null;
+  let peSession = null;
 
   function downloadProgress(loaded, total) {
     setProgress(t('scan.download', { p: Math.round(loaded / total * 100) }));
@@ -888,16 +907,36 @@
     return blob.arrayBuffer();
   }
 
+  async function loadSession(url) {
+    if (!ort) ort = await import(ORT_URL);
+    const bytes = await fetchModel(url);
+    setProgress(t('scan.preparing'));
+    return ort.InferenceSession.create(bytes, { executionProviders: ['wasm'] });
+  }
+
   async function getImageSession() {
-    if (!imageSession) {
-      imageSession = (async () => {
-        if (!ort) ort = await import(ORT_URL);
-        const bytes = await fetchModel(IMAGE_MODEL_URL);
-        setProgress(t('scan.preparing'));
-        return ort.InferenceSession.create(bytes, { executionProviders: ['wasm'] });
-      })().catch(e => { imageSession = null; throw e; });
-    }
+    if (!imageSession) imageSession = loadSession(IMAGE_MODEL_URL).catch(e => { imageSession = null; throw e; });
     return imageSession;
+  }
+
+  async function getPeSession() {
+    if (!peSession) peSession = loadSession(PE_MODEL_URL).catch(e => { peSession = null; throw e; });
+    return peSession;
+  }
+
+  function softmaxFirst(logits) {
+    const [a, b] = logits;
+    const m = Math.max(a, b);
+    return Math.exp(a - m) / (Math.exp(a - m) + Math.exp(b - m));
+  }
+
+  // Name of the AI tool if the file carries an AI label in its metadata, else null.
+  function findAiMarker(buf) {
+    const bytes = new Uint8Array(buf);
+    const latin1 = new TextDecoder('latin1');
+    const text = latin1.decode(bytes.subarray(0, 2 * 1024 * 1024)) + latin1.decode(bytes.subarray(Math.max(0, bytes.length - 256 * 1024)));
+    const hit = AI_MARKERS.find(([marker]) => text.includes(marker));
+    return hit ? hit[1] : null;
   }
 
   // Probability (0..1) that the input is AI-made, from a classifier's label scores.
@@ -909,31 +948,49 @@
     return human ? 1 - human.score : 0.5;
   }
 
-  // Probability (0..1) that an image is AI-generated.
-  async function scoreImage(src) {
-    const session = await getImageSession();
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.src = src;
-    await img.decode();
-
-    const N = IMAGE_SIZE;
+  // Draw an image into an N×N canvas and return its RGB pixels as a CHW float tensor.
+  // `cover` keeps the aspect ratio and center-crops; otherwise the image is stretched.
+  function toTensor(img, N, cover, mean = [0, 0, 0], std = [1, 1, 1]) {
     const canvas = document.createElement('canvas');
     canvas.width = N;
     canvas.height = N;
     const ctx = canvas.getContext('2d');
     ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(img, 0, 0, N, N);
+    if (cover) {
+      const scale = N / Math.min(img.naturalWidth, img.naturalHeight);
+      const w = img.naturalWidth * scale, h = img.naturalHeight * scale;
+      ctx.drawImage(img, (N - w) / 2, (N - h) / 2, w, h);
+    } else {
+      ctx.drawImage(img, 0, 0, N, N);
+    }
     const px = ctx.getImageData(0, 0, N, N).data;
-
     const data = new Float32Array(3 * N * N);
     for (let i = 0; i < N * N; i++) {
-      for (let c = 0; c < 3; c++) data[c * N * N + i] = (px[i * 4 + c] / 255 - IMAGE_MEAN[c]) / IMAGE_STD[c];
+      for (let c = 0; c < 3; c++) data[c * N * N + i] = (px[i * 4 + c] / 255 - mean[c]) / std[c];
     }
-    const res = await session.run({ pixel_values: new ort.Tensor('float32', data, [1, 3, N, N]) });
-    const [fake, real] = res.logits.data;
-    const m = Math.max(fake, real);
-    return Math.exp(fake - m) / (Math.exp(fake - m) + Math.exp(real - m));
+    return new ort.Tensor('float32', data, [1, 3, N, N]);
+  }
+
+  // AI probability (0..1) from both engines: { main, second }.
+  async function scoreImage(src) {
+    const [main, second] = await Promise.all([getImageSession(), getPeSession()]);
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = src;
+    await img.decode();
+    const a = await main.run({ pixel_values: toTensor(img, IMAGE_SIZE, false, IMAGE_MEAN, IMAGE_STD) });
+    const b = await second.run({ [second.inputNames[0]]: toTensor(img, 256, true) });
+    return { main: softmaxFirst(a.logits.data), second: softmaxFirst(b[second.outputNames[0]].data) };
+  }
+
+  // Combine the two engines into a displayed percentage and verdict.
+  // The main engine decides; if it says "real" but the second engine is suspicious, we answer "not sure".
+  // Never show 0% or 100%: no detector is certain.
+  function combine({ main, second }) {
+    const clamp = p => Math.min(98, Math.max(2, Math.round(p)));
+    if (main >= 0.5) return { pct: clamp(Math.max(70, main * 100)), verdict: 'fake' };
+    if (second >= 0.5) return { pct: clamp(31 + (second - 0.5) * 2 * 38), verdict: 'maybe', split: true };
+    return { pct: clamp(Math.min(30, main * 100)), verdict: 'real' };
   }
 
   // Grab evenly spaced frames from a video file as JPEG data URLs.
@@ -981,13 +1038,23 @@
     const kind = file.type.startsWith('video') ? 'video' : 'image';
     showScanning(file.name, t(kind === 'video' ? 'scan.video' : 'scan.connecting'));
     try {
+      // 1. AI label inside the file: when present, it's the most reliable signal there is.
+      const label = findAiMarker(await file.arrayBuffer());
+      const labelled = label ? {
+        verdict: 'fake',
+        simpleLine: t('line.label'),
+        proSub: t('sub.label', { src: label })
+      } : {};
+
       if (kind === 'image') {
         const url = URL.createObjectURL(file);
-        const p = await scoreImage(url);
+        const s = await scoreImage(url);
         URL.revokeObjectURL(url);
-        const pct = Math.round(p * 100);
-        showResult(buildResult('image', file.name, pct, {
-          bars: [[t('bar.imgAi'), pct], [t('bar.imgReal'), 100 - pct]]
+        const c = combine(s);
+        const bars = [[t('bar.engine1'), Math.round(s.main * 100)], [t('bar.engine2'), Math.round(s.second * 100)]];
+        if (label) bars.unshift([t('bar.label'), 100]);
+        showResult(buildResult('image', file.name, label ? 98 : c.pct, {
+          verdict: c.verdict, bars, ...(c.split ? { proSub: t('sub.split') } : {}), ...labelled
         }));
         return;
       }
@@ -998,14 +1065,18 @@
         setProgress(t('scan.frame', { i: i + 1, n: frames.length }));
         scores.push(await scoreImage(frames[i].url));
       }
-      const pct = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length * 100);
+      const avg = key => scores.reduce((a, s) => a + s[key], 0) / scores.length;
+      const c = combine({ main: avg('main'), second: avg('second') });
       const half = duration / frames.length / 2;
-      const flagged = frames.map((f, i) => ({ ...f, p: Math.round(scores[i] * 100) })).filter(f => f.p >= 50);
-      showResult(buildResult('video', file.name, pct, {
+      const flagged = frames.map((f, i) => ({ ...f, p: Math.round(scores[i].main * 100) })).filter(f => f.p >= 50);
+      showResult(buildResult('video', file.name, label ? 98 : c.pct, {
+        verdict: c.verdict,
+        ...(c.split ? { proSub: t('sub.split') } : {}),
         total: duration,
         segments: flagged.map(f => [Math.max(0, f.t - half), Math.min(duration, f.t + half)]),
         marks: flagged.map(f => [f.t, t('mark.frame', { p: f.p })]),
-        bars: frames.map((f, i) => [t('bar.frame', { t: fmtTime(f.t) }), Math.round(scores[i] * 100)])
+        bars: frames.map((f, i) => [t('bar.frame', { t: fmtTime(f.t) }), combine(scores[i]).pct]),
+        ...labelled
       }));
     } catch (e) {
       console.error(e);
