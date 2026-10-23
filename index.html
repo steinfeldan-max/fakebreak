@@ -97,6 +97,38 @@
   .lang-btn span { font-size: 14px; color: #AFA9EC; font-weight: 400; }
   #lang .note { font-size: 13px; color: #8A85C9; text-align: center; margin-top: auto; }
 
+  /* Intro guide (story-style animated scenes) */
+  #intro { background: var(--ink); color: #fff; padding: 20px 20px 32px; gap: 16px; cursor: pointer; user-select: none; }
+  .story-bar { display: flex; gap: 4px; direction: ltr; }
+  .story-bar span { flex: 1; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .25); overflow: hidden; }
+  .story-bar span i { display: block; height: 100%; width: 0; background: var(--coral); }
+  .story-bar span.done i { width: 100%; }
+  .story-bar span.now i { animation: storyfill var(--scene-ms) linear forwards; }
+  @keyframes storyfill { to { width: 100%; } }
+  .intro-top { display: flex; justify-content: space-between; align-items: center; }
+  .intro-top .logo { font-size: 20px; }
+  .skip { font-family: inherit; background: none; border: 1px solid var(--violet); color: #fff; border-radius: 999px; padding: 6px 14px; font-size: 14px; cursor: pointer; }
+  .scene { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; text-align: center; }
+  .scene-art { width: 220px; height: 220px; animation: popin .5s ease-out; }
+  .scene-text { font-size: 24px; font-weight: 500; line-height: 1.4; max-width: 300px; animation: rise .6s ease-out; }
+  /* Transform only, no opacity: if animations are paused (background tab, power saving) the scene still shows. */
+  @keyframes popin { from { transform: scale(.75); } }
+  @keyframes rise { from { transform: translateY(16px); } }
+  .a-pulse { animation: pulse 1s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+  .a-up { animation: up 1.4s ease-in-out infinite; }
+  @keyframes up { 0% { transform: translateY(30px); } 100% { transform: translateY(-20px); } }
+  .a-scan { animation: scan 1.6s ease-in-out infinite alternate; }
+  @keyframes scan { from { transform: translateY(0); } to { transform: translateY(120px); } }
+  .a-blink { animation: blink 1.6s ease-in-out infinite; }
+  .a-blink.d2 { animation-delay: .5s; } .a-blink.d3 { animation-delay: 1s; }
+  @keyframes blink { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+  .a-swap1 { animation: swap 2.4s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+  .a-swap2 { animation: swap 2.4s ease-in-out infinite reverse; transform-origin: center; transform-box: fill-box; }
+  @keyframes swap { 0%, 45% { opacity: 1; transform: scale(1); } 55%, 100% { opacity: 0; transform: scale(.7); } }
+  .a-draw { stroke-dasharray: 200; stroke-dashoffset: 200; animation: draw 1.8s ease-out infinite; }
+  @keyframes draw { 60%, 100% { stroke-dashoffset: 0; } }
+  .watch-intro { font-family: inherit; background: none; border: none; color: #AFA9EC; text-decoration: underline; font-size: 15px; cursor: pointer; margin-bottom: 12px; }
+
   /* Welcome */
   #welcome { background: var(--ink); color: #fff; justify-content: space-between; text-align: center; }
   #welcome .hero { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
@@ -334,6 +366,8 @@
   .heat-grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 1fr); direction: ltr; }
   .heat-grid div { border: 1px solid rgba(255, 255, 255, .15); }
   .heat-note { font-size: 12px; color: #AFA9EC; margin-top: 8px; line-height: 1.5; }
+  .web-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; direction: ltr; }
+  .web-btns .btn { font-size: 13px; padding: 10px 4px; }
   .bar-row { margin-bottom: 10px; }
   .bar-row:last-child { margin-bottom: 0; }
   .bar-head { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
@@ -385,6 +419,19 @@
     <p class="note">More languages coming soon</p>
   </section>
 
+  <!-- Screen 0b: intro guide (animated, story-style; tap to skip ahead) -->
+  <section class="screen" id="intro" dir="ltr" lang="en" onclick="nextScene()">
+    <div class="story-bar" id="story-bar"></div>
+    <div class="intro-top">
+      <div class="logo">
+        <svg class="bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
+        <span><span class="fake">Fake</span><span class="break">Break</span></span>
+      </div>
+      <button class="skip" onclick="event.stopPropagation(); endIntro()">Skip</button>
+    </div>
+    <div class="scene" id="scene"></div>
+  </section>
+
   <!-- Screen 1: welcome -->
   <section class="screen" id="welcome">
     <div class="hero">
@@ -395,6 +442,7 @@
       <p class="tagline" data-t="welcome.tagline"></p>
       <p class="sub" data-t="welcome.sub"></p>
     </div>
+    <button class="watch-intro" onclick="playIntro()" data-t="intro.watch"></button>
     <button class="btn btn-primary" onclick="go('login')" data-t="welcome.start"></button>
   </section>
 
@@ -554,6 +602,7 @@
       <div class="verdict-line" id="rs-line"></div>
     </div>
     <button class="btn btn-big btn-share-simple" onclick="share()" id="rs-share"></button>
+    <button class="btn btn-big btn-again-simple" onclick="webSearch('lens')" id="rs-web" data-t="web.simpleBtn"></button>
     <button class="btn btn-big btn-again-simple" onclick="goHome()" data-t="rs.again"></button>
   </section>
 
@@ -588,6 +637,16 @@
       <p class="heat-note" data-t="rp.heatNote"></p>
     </div>
 
+    <div class="card" id="rp-web-card">
+      <h2 data-t="web.title"></h2>
+      <p class="heat-note" data-t="web.hint"></p>
+      <div class="web-btns">
+        <button class="btn btn-pro btn-again-pro" onclick="webSearch('lens')">Google Lens</button>
+        <button class="btn btn-pro btn-again-pro" onclick="webSearch('bing')">Bing</button>
+        <button class="btn btn-pro btn-again-pro" onclick="webSearch('tineye')">TinEye</button>
+      </div>
+    </div>
+
     <div class="card" id="rp-timeline-card">
       <h2 data-t="rp.where"></h2>
       <div class="timeline" id="rp-timeline"></div>
@@ -620,7 +679,18 @@
   const S = {
     'welcome.tagline': ['שוברים כל זיוף', 'Break every fake', 'نكشف كل تزييف', 'Разоблачаем любую подделку'],
     'welcome.sub': ['בודקים כל סרטון, תמונה או טקסט, ומגלים אם הם אמיתיים או נוצרו בבינה מלאכותית.', "Check any video, photo or text and find out if it's real or made with AI.", 'افحص أي فيديو أو صورة أو نص واكتشف إن كان حقيقيًا أو مصنوعًا بالذكاء الاصطناعي.', 'Проверяйте любое видео, фото или текст и узнавайте, настоящее ли это или сделано ИИ.'],
-    'welcome.start': ['בואו נתחיל', "Let's start", 'لنبدأ', 'Начать'],
+    'intro.1': ['קיבלת סרטון, תמונה או הודעה קולית שנראים חשודים?', 'Got a video, photo or voice message that looks suspicious?', 'وصلك فيديو أو صورة أو رسالة صوتية تبدو مريبة؟', 'Получили подозрительное видео, фото или голосовое?'],
+    'intro.2': ['שלח אותם ל-FakeBreak: מעלים קובץ, מקליטים או כותבים', 'Send it to FakeBreak: upload a file, record or type', 'أرسلها إلى FakeBreak: ارفع ملفًا أو سجّل أو اكتب', 'Отправьте в FakeBreak: загрузите файл, запишите или напишите'],
+    'intro.3': ['שלושה מנועי AI סורקים כל אזור בתמונה, ומנוע קול מקשיב לכל מילה', 'Three AI engines scan every area of the image, and a voice engine listens to every word', 'ثلاثة محركات ذكاء اصطناعي تفحص كل منطقة في الصورة، ومحرك صوت يستمع لكل كلمة', 'Три движка ИИ сканируют каждую область снимка, а голосовой движок слушает каждое слово'],
+    'intro.4': ['תוך שניות: אמיתי או מזויף, עם הסבר ברור', 'In seconds: real or fake, with a clear explanation', 'خلال ثوانٍ: حقيقي أم مزيف، مع شرح واضح', 'За секунды: правда или подделка, с понятным объяснением'],
+    'intro.5': ['ושולחים אזהרה למשפחה בלחיצה אחת. FakeBreak שומרת עליכם.', 'And warn your family in one tap. FakeBreak has your back.', 'وأرسل تحذيرًا لعائلتك بضغطة واحدة. FakeBreak يحميكم.', 'И предупредите семью одним нажатием. FakeBreak защищает вас.'],
+    'web.title': ['בדיקה ברשת: התמונה כבר פורסמה?', 'Web check: has this image appeared before?', 'فحص عبر الإنترنت: هل نُشرت هذه الصورة من قبل؟', 'Проверка в сети: публиковалось ли это фото раньше?'],
+    'web.hint': ['חיפוש תמונה הפוך מראה איפה התמונה כבר הופיעה, למשל באתר חדשות או בבדיקת עובדות. התמונה תעלה לאתר שתבחר.', 'A reverse image search shows where the image already appeared, like a news site or a fact-check. The image is uploaded to the site you pick.', 'البحث العكسي عن الصور يُظهر أين ظهرت الصورة، مثل موقع أخبار أو تدقيق حقائق. تُرفع الصورة إلى الموقع الذي تختاره.', 'Обратный поиск по картинке покажет, где фото уже появлялось, например в новостях или проверке фактов. Фото загрузится на выбранный сайт.'],
+    'web.copied': ['התמונה הועתקה. באתר שנפתח לחץ Ctrl+V כדי להדביק אותה.', 'Image copied. On the site that opened, press Ctrl+V to paste it.', 'تم نسخ الصورة. في الموقع الذي فُتح اضغط Ctrl+V للصقها.', 'Фото скопировано. На открывшемся сайте нажмите Ctrl+V, чтобы вставить.'],
+    'web.upload': ['באתר שנפתח, העלה את התמונה כדי לחפש אותה.', 'On the site that opened, upload the image to search for it.', 'في الموقع الذي فُتح، ارفع الصورة للبحث عنها.', 'На открывшемся сайте загрузите фото для поиска.'],
+    'web.simpleBtn': ['חפש את התמונה באינטרנט', 'Search this image online', 'ابحث عن الصورة على الإنترنت', 'Найти фото в интернете'],
+    'intro.watch': ['צפה בסרטון ההדרכה', 'Watch the guide', 'شاهد الفيديو التعريفي', 'Смотреть обучение'],
+    'welcome.start':['בואו נתחיל', "Let's start", 'لنبدأ', 'Начать'],
 
     'login.title': ['מה מספר הטלפון שלך?', "What's your phone number?", 'ما رقم هاتفك؟', 'Ваш номер телефона?'],
     'login.hint': ['נשלח אליך קוד חד-פעמי כדי לוודא שזה אתה.', "We'll send you a one-time code to make sure it's you.", 'سنرسل لك رمزًا لمرة واحدة للتأكد من هويتك.', 'Мы отправим одноразовый код, чтобы убедиться, что это вы.'],
@@ -802,6 +872,75 @@
     document.querySelectorAll('[data-t-ph]').forEach(el => { el.placeholder = t(el.dataset.tPh); });
     document.getElementById('country').value = l === 'en' ? 'US' : 'IL';
     updatePhonePlaceholder();
+    let seen = false;
+    try { seen = localStorage.getItem('fakebreak-intro-seen') === '1'; } catch (e) { /* storage blocked */ }
+    if (seen) go('welcome');
+    else playIntro();
+  }
+
+  // ---------- Intro guide: 5 animated scenes, like stories ----------
+
+  const SCENE_MS = 4500;
+  const INTRO_SCENES = [
+    { key: 'intro.1', art: `<svg viewBox="0 0 220 220" fill="none">
+        <rect x="60" y="20" width="100" height="180" rx="18" stroke="#AFA9EC" stroke-width="6"/>
+        <rect x="76" y="56" width="68" height="44" rx="6" fill="#3C3489"/>
+        <path d="M100 70l18 8-18 8z" fill="#F0997B"/>
+        <rect x="76" y="112" width="68" height="8" rx="4" fill="#3C3489"/><rect x="76" y="128" width="46" height="8" rx="4" fill="#3C3489"/>
+        <g class="a-pulse"><circle cx="156" cy="32" r="22" fill="#E24B4A"/><text x="156" y="41" text-anchor="middle" font-size="26" font-weight="700" fill="#fff">!</text></g></svg>` },
+    { key: 'intro.2', art: `<svg viewBox="0 0 220 220" fill="none">
+        <rect x="40" y="120" width="140" height="70" rx="14" stroke="#7F77DD" stroke-width="6" stroke-dasharray="12 8"/>
+        <g class="a-up"><path d="M110 150V70M80 98l30-30 30 30" stroke="#F0997B" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></g>
+        <rect x="156" y="20" width="40" height="56" rx="10" stroke="#AFA9EC" stroke-width="5"/><circle cx="176" cy="40" r="7" fill="#AFA9EC"/>
+        <path d="M24 30h34M24 46h24" stroke="#AFA9EC" stroke-width="6" stroke-linecap="round"/></svg>` },
+    { key: 'intro.3', art: `<svg viewBox="0 0 220 220" fill="none">
+        <rect x="40" y="40" width="140" height="140" rx="12" fill="#3C3489"/>
+        <circle cx="90" cy="95" r="18" fill="#7F77DD"/><path d="M40 160l45-40 30 25 25-20 40 35v8a12 12 0 0 1-12 12H52a12 12 0 0 1-12-12z" fill="#7F77DD"/>
+        <rect x="120" y="60" width="44" height="44" fill="#E24B4A" opacity=".55"/>
+        <g class="a-scan"><rect x="34" y="40" width="152" height="6" rx="3" fill="#F0997B"/></g>
+        <circle class="a-blink" cx="80" cy="205" r="8" fill="#5DCAA5"/><circle class="a-blink d2" cx="110" cy="205" r="8" fill="#5DCAA5"/><circle class="a-blink d3" cx="140" cy="205" r="8" fill="#5DCAA5"/></svg>` },
+    { key: 'intro.4', art: `<svg viewBox="0 0 220 220" fill="none">
+        <g class="a-swap1"><circle cx="110" cy="110" r="90" fill="#E24B4A"/><path d="M75 75l70 70M145 75l-70 70" stroke="#fff" stroke-width="18" stroke-linecap="round"/></g>
+        <g class="a-swap2"><circle cx="110" cy="110" r="90" fill="#1D9E75"/><path class="a-draw" d="M68 112l28 28 58-62" stroke="#fff" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/></g></svg>` },
+    { key: 'intro.5', art: `<svg viewBox="0 0 220 220" fill="none">
+        <path d="M110 22l70 26v52c0 46-30 78-70 96-40-18-70-50-70-96V48z" fill="#3C3489" stroke="#7F77DD" stroke-width="6"/>
+        <g class="a-pulse"><circle cx="110" cy="92" r="16" fill="#F0997B"/><path d="M80 146c4-20 16-30 30-30s26 10 30 30" fill="#F0997B"/></g>
+        <circle class="a-blink" cx="60" cy="190" r="12" fill="#AFA9EC"/><circle class="a-blink d2" cx="110" cy="200" r="12" fill="#AFA9EC"/><circle class="a-blink d3" cx="160" cy="190" r="12" fill="#AFA9EC"/></svg>` }
+  ];
+  let sceneIndex = 0;
+  let sceneTimer = null;
+
+  function playIntro() {
+    sceneIndex = 0;
+    const bar = document.getElementById('story-bar');
+    bar.style.setProperty('--scene-ms', SCENE_MS + 'ms');
+    bar.innerHTML = INTRO_SCENES.map(() => '<span><i></i></span>').join('');
+    go('intro');
+    showScene();
+  }
+
+  function showScene() {
+    clearTimeout(sceneTimer);
+    const s = INTRO_SCENES[sceneIndex];
+    [...document.getElementById('story-bar').children].forEach((el, i) => {
+      el.className = i < sceneIndex ? 'done' : i === sceneIndex ? 'now' : '';
+    });
+    const scene = document.getElementById('scene');
+    scene.innerHTML = `<div class="scene-art">${s.art}</div><p class="scene-text"></p>`;
+    // The guide is always in English (the founder's choice), whatever language the app is set to.
+    scene.querySelector('.scene-text').textContent = S[s.key][LANGS.indexOf('en')];
+    sceneTimer = setTimeout(nextScene, SCENE_MS);
+  }
+
+  function nextScene() {
+    if (sceneIndex >= INTRO_SCENES.length - 1) return endIntro();
+    sceneIndex++;
+    showScene();
+  }
+
+  function endIntro() {
+    clearTimeout(sceneTimer);
+    try { localStorage.setItem('fakebreak-intro-seen', '1'); } catch (e) { /* storage blocked */ }
     go('welcome');
   }
 
@@ -1562,6 +1701,7 @@
       document.getElementById('rs-title').textContent = d.simpleTitle;
       document.getElementById('rs-line').textContent = d.simpleLine;
       document.getElementById('rs-share').textContent = t(d.verdict === 'real' ? 'rs.shareReal' : 'rs.shareWarn');
+      document.getElementById('rs-web').style.display = d.preview ? '' : 'none';
       go('result-simple');
       return;
     }
@@ -1578,6 +1718,7 @@
       ? `<span class="badge-live">${t('badge.live')}</span>`
       : `<span class="badge-demo">${t('badge.demo')}</span>`;
 
+    document.getElementById('rp-web-card').style.display = d.preview ? '' : 'none';
     const heatCard = document.getElementById('rp-heat-card');
     heatCard.style.display = d.heat ? '' : 'none';
     if (d.heat) {
@@ -1620,6 +1761,46 @@
       ring.style.transition = 'stroke-dasharray .9s ease-out';
       ring.setAttribute('stroke-dasharray', (d.pct || 0) + ' 100');
     }, 50));
+  }
+
+  // ---------- Web check: reverse image search ----------
+  // A free automatic web check would need a paid API with a secret key, which a public page can't hold.
+  // So the user picks a search site: on phones we hand the image to the share sheet (Google Lens appears
+  // there); on computers we copy it to the clipboard and open the site, where Ctrl+V pastes it.
+  const WEB_SEARCH = {
+    lens: 'https://lens.google.com/',
+    bing: 'https://www.bing.com/visualsearch',
+    tineye: 'https://tineye.com/'
+  };
+
+  async function webSearch(engine) {
+    const d = current;
+    if (!d || !d.preview) return;
+    const img = new Image();
+    img.src = d.preview;
+    await img.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+
+    const file = new File([blob], 'image.png', { type: 'image/png' });
+    if (engine === 'lens' && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file] });
+        return;
+      } catch (e) {
+        if (e.name === 'AbortError') return;
+      }
+    }
+    let copied = false;
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      copied = true;
+    } catch (e) { /* clipboard not allowed: the user uploads on the site instead */ }
+    window.open(WEB_SEARCH[engine], '_blank');
+    toast(t(copied ? 'web.copied' : 'web.upload'));
   }
 
   const APP_URL = 'https://steinfeldan-max.github.io/fakebreak/';
