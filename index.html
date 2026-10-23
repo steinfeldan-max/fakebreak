@@ -724,7 +724,13 @@
     'scan.voice': ['מנתח את הקול... קטע {i} מתוך {n}', 'Analyzing the voice... part {i} of {n}', 'جارٍ تحليل الصوت... الجزء {i} من {n}', 'Анализируем голос... часть {i} из {n}'],
     'bar.window': ['קטע מ-{t}', 'Part from {t}', 'الجزء من {t}', 'Часть с {t}'],
     'mark.window': ['קול חשוד כ-AI ({p}%)', 'Voice suspected AI ({p}%)', 'صوت يُشتبه أنه ذكاء اصطناعي ({p}%)', 'Голос похож на ИИ ({p}%)'],
-    'voice.st':['עדיין לא יודעים לבדוק קול', "We can't check voices yet", 'لا يمكننا فحص الأصوات بعد', 'Пока не умеем проверять голос'],
+    'rec.failed': ['ההקלטה לא הצליחה להתחיל. סגור אפליקציות אחרות שמשתמשות במיקרופון ונסה שוב.', "Recording couldn't start. Close other apps using the microphone and try again.", 'تعذّر بدء التسجيل. أغلق التطبيقات الأخرى التي تستخدم الميكروفون وحاول مرة أخرى.', 'Не удалось начать запись. Закройте другие приложения, использующие микрофон, и попробуйте снова.'],
+    'voice.fail.decode':['לא הצלחנו לקרוא את ההקלטה.', "We couldn't read the recording.", 'لم نتمكن من قراءة التسجيل.', 'Не удалось прочитать запись.'],
+    'voice.fail.short': ['ההקלטה קצרה מדי. הקלט לפחות 2 שניות של דיבור.', 'The recording is too short. Record at least 2 seconds of speech.', 'التسجيل قصير جدًا. سجّل ثانيتين على الأقل من الكلام.', 'Запись слишком короткая. Запишите хотя бы 2 секунды речи.'],
+    'voice.fail.download': ['לא הצלחנו להוריד את מנוע הקול. בדוק את החיבור לאינטרנט ונסה שוב.', "We couldn't download the voice engine. Check your connection and try again.", 'لم نتمكن من تنزيل محرك الصوت. تحقق من الاتصال وحاول مرة أخرى.', 'Не удалось загрузить голосовой движок. Проверьте интернет и попробуйте снова.'],
+    'voice.fail.memory': ['אין מספיק זיכרון במכשיר כדי להפעיל את מנוע הקול (813MB). נסה במחשב.', 'Not enough memory on this device to run the voice engine (813 MB). Try on a computer.', 'لا توجد ذاكرة كافية على الجهاز لتشغيل محرك الصوت (813MB). جرّب على حاسوب.', 'Недостаточно памяти для голосового движка (813 МБ). Попробуйте на компьютере.'],
+    'voice.fail.run': ['מנוע הקול נכשל בזמן הבדיקה.', 'The voice engine failed during the check.', 'فشل محرك الصوت أثناء الفحص.', 'Голосовой движок дал сбой во время проверки.'],
+    'voice.st': ['לא הצלחנו לבדוק את הקול', "We couldn't check the voice", 'لم نتمكن من فحص الصوت', 'Не удалось проверить голос'],
     'voice.sl': ['קולות מזויפים קשים מאוד לזיהוי. אם מבקשים ממך כסף או סוד, נתק והתקשר בעצמך למספר שאתה מכיר.', 'Fake voices are very hard to detect. If someone asks for money or secrets, hang up and call them back on a number you know.', 'الأصوات المزيفة صعبة الكشف جدًا. إذا طلب أحدهم مالًا أو أسرارًا، أغلق الخط واتصل به على رقم تعرفه.', 'Поддельные голоса очень трудно распознать. Если просят денег или секретов — положите трубку и перезвоните на известный вам номер.'],
     'voice.pt': ['לא נבדק', 'Not checked', 'لم يُفحص', 'Не проверено'],
     'voice.ps': ['ניסינו מנוע חינמי לזיהוי קול, והוא תפס רק 1 מתוך 10 קולות מזויפים, אז לא נציג תוצאה שעלולה להטעות. כן בדקנו אם יש בקובץ סימון AI. טיפ: קבעו מילת קוד משפחתית.', "We tried a free voice-detection engine and it caught only 1 of 10 fake voices, so we won't show a result that could mislead you. We did check the file for an AI label. Tip: agree on a family code word.", 'جرّبنا محرك كشف صوت مجاني فالتقط 1 فقط من 10 أصوات مزيفة، لذا لن نعرض نتيجة قد تضللك. لكننا فحصنا الملف بحثًا عن علامة ذكاء اصطناعي. نصيحة: اتفقوا على كلمة سر عائلية.', 'Мы попробовали бесплатный движок для голоса: он распознал только 1 из 10 поддельных голосов, поэтому мы не покажем результат, который может ввести в заблуждение. Метку ИИ в файле мы проверили. Совет: договоритесь о семейном кодовом слове.'],
@@ -1174,21 +1180,31 @@
         const cache = await caches.open('fakebreak-models');
         const hit = await cache.match(key);
         let bytes;
-        if (hit) {
-          bytes = new Uint8Array(await hit.arrayBuffer());
-        } else {
-          bytes = new Uint8Array(manifest.size);
-          let loaded = 0;
-          for (let i = 0; i < manifest.parts; i++) {
-            const part = new Uint8Array(await (await fetch(VOICE_MODEL_DIR + 'pellav2.part' + String(i).padStart(2, '0'))).arrayBuffer());
-            bytes.set(part, loaded);
-            loaded += part.length;
-            downloadProgress(loaded, manifest.size);
+        try {
+          if (hit) {
+            bytes = new Uint8Array(await hit.arrayBuffer());
+          } else {
+            bytes = new Uint8Array(manifest.size);
+            let loaded = 0;
+            for (let i = 0; i < manifest.parts; i++) {
+              const res = await fetch(VOICE_MODEL_DIR + 'pellav2.part' + String(i).padStart(2, '0'));
+              if (!res.ok) throw new Error('HTTP ' + res.status);
+              const part = new Uint8Array(await res.arrayBuffer());
+              bytes.set(part, loaded);
+              loaded += part.length;
+              downloadProgress(loaded, manifest.size);
+            }
+            try { await cache.put(key, new Response(bytes)); } catch (e) { /* storage full: just skip caching */ }
           }
-          try { await cache.put(key, new Response(bytes)); } catch (e) { /* storage full: just skip caching */ }
+        } catch (e) {
+          throw stageError(e instanceof RangeError ? 'memory' : 'download', e);
         }
         setProgress(t('scan.preparing'));
-        return ort.InferenceSession.create(bytes, { executionProviders: ['wasm'] });
+        try {
+          return await ort.InferenceSession.create(bytes, { executionProviders: ['wasm'] });
+        } catch (e) {
+          throw stageError('memory', e);
+        }
       })().catch(e => { voiceSession = null; throw e; });
     }
     return voiceSession;
@@ -1196,15 +1212,59 @@
 
   // Score a voice recording: up to VOICE_WINDOWS evenly spaced 4-second windows, each through pellav2.
   // Returns { duration, windows: [{ start, p }] } with p = probability the voice is AI-made.
-  async function scoreVoice(file) {
-    const ctx = new AudioContext({ sampleRate: PELLA_SR });
-    const audio = await ctx.decodeAudioData(await file.arrayBuffer());
-    ctx.close();
+  // Errors from the voice check carry a stage, so the result can say what went wrong.
+  function stageError(stage, e) {
+    const err = new Error(stage + ': ' + (e && e.message || e));
+    err.stage = stage;
+    return err;
+  }
+
+  // Decode any recording/file to 16 kHz mono. Decoding happens at the device's own rate (some phones,
+  // e.g. iPhones, refuse an AudioContext at 16 kHz), then we resample with an OfflineAudioContext,
+  // or with linear interpolation if that's unavailable too.
+  async function decodeVoice(file) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    const ctx = new Ctx();
+    let audio;
+    try {
+      audio = await ctx.decodeAudioData(await file.arrayBuffer());
+    } finally {
+      ctx.close();
+    }
     const mono = new Float32Array(audio.length);
     for (let c = 0; c < audio.numberOfChannels; c++) {
       const ch = audio.getChannelData(c);
       for (let i = 0; i < ch.length; i++) mono[i] += ch[i] / audio.numberOfChannels;
     }
+    if (audio.sampleRate === PELLA_SR) return mono;
+    const outLen = Math.ceil(audio.duration * PELLA_SR);
+    try {
+      const off = new OfflineAudioContext(1, outLen, PELLA_SR);
+      const buf = off.createBuffer(1, mono.length, audio.sampleRate);
+      buf.copyToChannel(mono, 0);
+      const src = off.createBufferSource();
+      src.buffer = buf;
+      src.connect(off.destination);
+      src.start();
+      return (await off.startRendering()).getChannelData(0);
+    } catch (e) {
+      const out = new Float32Array(outLen), ratio = audio.sampleRate / PELLA_SR;
+      for (let i = 0; i < outLen; i++) {
+        const x = i * ratio, j = Math.floor(x), f = x - j;
+        out[i] = (mono[j] || 0) * (1 - f) + (mono[j + 1] || 0) * f;
+      }
+      return out;
+    }
+  }
+
+  async function scoreVoice(file) {
+    let mono;
+    try {
+      mono = await decodeVoice(file);
+    } catch (e) {
+      throw stageError('decode', e);
+    }
+    if (mono.length < PELLA_SR / 2) throw stageError('short', 'under half a second');
     let starts = [0];
     if (mono.length > PELLA_CROP) {
       starts = [];
@@ -1219,10 +1279,15 @@
     for (let i = 0; i < starts.length; i++) {
       setProgress(t('scan.voice', { i: i + 1, n: starts.length }));
       const f = pellaFeatures(pellaPrep(mono.subarray(starts[i], starts[i] + PELLA_CROP)));
-      const out = await session.run({
-        input_features: new ort.Tensor('float32', f.data, [1, f.frames, 160]),
-        attention_mask: new ort.Tensor('int64', new BigInt64Array(f.frames).fill(1n), [1, f.frames])
-      });
+      let out;
+      try {
+        out = await session.run({
+          input_features: new ort.Tensor('float32', f.data, [1, f.frames, 160]),
+          attention_mask: new ort.Tensor('int64', new BigInt64Array(f.frames).fill(1n), [1, f.frames])
+        });
+      } catch (e) {
+        throw stageError('run', e);
+      }
       const z = out[session.outputNames[0]].data[0];
       windows.push({ start: starts[i] / PELLA_SR, p: 1 / (1 + Math.exp(-z)) });
     }
@@ -1448,15 +1513,19 @@
       // Voice: pellav2 runs on the device. If the engine can't load (e.g. not enough memory on an older
       // phone), fall back to the AI label check and say honestly that we couldn't check the voice.
       if (kind === 'voice') {
-        let v = null;
+        let v = null, failure = null;
         try {
           v = await scoreVoice(file);
         } catch (e) {
           console.error(e);
+          failure = e.stage || 'run';
         }
         if (!v) {
+          // Say exactly what failed, plus the technical message in the detailed view (helps us fix it).
+          const why = t('voice.fail.' + failure);
           showResult(buildResult('voice', file.name, label ? 98 : null, label ? { verdict: 'fake', ...labelled } : {
-            verdict: 'maybe', simpleTitle: t('voice.st'), simpleLine: t('voice.sl'), proTitle: t('voice.pt'), proSub: t('voice.ps')
+            verdict: 'maybe', simpleTitle: t('voice.st'), simpleLine: why + ' ' + t('voice.sl'), proTitle: t('voice.pt'),
+            proSub: why + ' (' + failure + ')'
           }));
           return;
         }
@@ -1604,6 +1673,8 @@
     document.getElementById('rec-err').textContent = '';
     document.getElementById('mic-btn').classList.remove('on');
     go('record');
+    // Start downloading the voice engine now, so it's ready (or closer) when the recording ends.
+    getVoiceSession().catch(() => { /* the check reports the reason if it still fails */ });
   }
 
   function toggleRecording() {
@@ -1632,7 +1703,14 @@
       }
       recorder = null;
     };
-    recorder.start();
+    try {
+      recorder.start();
+    } catch (e) {
+      stream.getTracks().forEach(tr => tr.stop());
+      recorder = null;
+      err.textContent = t('rec.failed');
+      return;
+    }
     const started = Date.now();
     recTimer = setInterval(() => {
       document.getElementById('rec-time').textContent = fmtTime((Date.now() - started) / 1000);
