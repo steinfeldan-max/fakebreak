@@ -724,7 +724,14 @@
     'scan.voice': ['מנתח את הקול... קטע {i} מתוך {n}', 'Analyzing the voice... part {i} of {n}', 'جارٍ تحليل الصوت... الجزء {i} من {n}', 'Анализируем голос... часть {i} из {n}'],
     'bar.window': ['קטע מ-{t}', 'Part from {t}', 'الجزء من {t}', 'Часть с {t}'],
     'mark.window': ['קול חשוד כ-AI ({p}%)', 'Voice suspected AI ({p}%)', 'صوت يُشتبه أنه ذكاء اصطناعي ({p}%)', 'Голос похож на ИИ ({p}%)'],
-    'rec.failed': ['ההקלטה לא הצליחה להתחיל. סגור אפליקציות אחרות שמשתמשות במיקרופון ונסה שוב.', "Recording couldn't start. Close other apps using the microphone and try again.", 'تعذّر بدء التسجيل. أغلق التطبيقات الأخرى التي تستخدم الميكروفون وحاول مرة أخرى.', 'Не удалось начать запись. Закройте другие приложения, использующие микрофон, и попробуйте снова.'],
+    'voice.fail.nospeech': ['לא שמענו מספיק דיבור בהקלטה. צריך לפחות 2 שניות של מישהו שמדבר.', "We didn't hear enough speech. We need at least 2 seconds of someone talking.", 'لم نسمع كلامًا كافيًا. نحتاج إلى ثانيتين على الأقل من شخص يتحدث.', 'Мы не услышали достаточно речи. Нужно хотя бы 2 секунды, где кто-то говорит.'],
+    'scan.vad': ['מחפש דיבור בהקלטה...', 'Looking for speech...', 'جارٍ البحث عن كلام...', 'Ищем речь...'],
+    'bar.videoVoice': ['הקול בסרטון', 'Voice in the video', 'الصوت في الفيديو', 'Голос в видео'],
+    'sub.videoVoice': ['התמונה בסרטון נראית אמיתית, אבל הקול נשמע כמו קול שנוצר ב-AI. היזהר.', 'The picture looks real, but the voice sounds AI-made. Be careful.', 'تبدو الصورة حقيقية، لكن الصوت يبدو مصنوعًا بالذكاء الاصطناعي. كن حذرًا.', 'Картинка выглядит настоящей, но голос похож на созданный ИИ. Будьте осторожны.'],
+    'sub.videoVoiceFake': ['הקול בסרטון כמעט בוודאות נוצר ב-AI (קול משובט), גם אם התמונה נראית אמיתית.', 'The voice in this video is almost certainly AI-made (a cloned voice), even if the picture looks real.', 'الصوت في هذا الفيديو مصنوع بالذكاء الاصطناعي على الأرجح الكبير (صوت مستنسخ)، حتى لو بدت الصورة حقيقية.', 'Голос в этом видео почти наверняка создан ИИ (клонированный), даже если картинка выглядит настоящей.'],
+    'sub.videoBoth':['גם התמונה וגם הקול בסרטון נראים כמו AI.', 'Both the picture and the voice look AI-made.', 'الصورة والصوت كلاهما يبدوان مصنوعين بالذكاء الاصطناعي.', 'И картинка, и голос похожи на созданные ИИ.'],
+    'mark.videoVoice': ['קול חשוד כ-AI ({p}%)', 'Voice suspected AI ({p}%)', 'صوت يُشتبه أنه ذكاء اصطناعي ({p}%)', 'Голос похож на ИИ ({p}%)'],
+    'rec.failed':['ההקלטה לא הצליחה להתחיל. סגור אפליקציות אחרות שמשתמשות במיקרופון ונסה שוב.', "Recording couldn't start. Close other apps using the microphone and try again.", 'تعذّر بدء التسجيل. أغلق التطبيقات الأخرى التي تستخدم الميكروفون وحاول مرة أخرى.', 'Не удалось начать запись. Закройте другие приложения, использующие микрофон, и попробуйте снова.'],
     'voice.fail.decode':['לא הצלחנו לקרוא את ההקלטה.', "We couldn't read the recording.", 'لم نتمكن من قراءة التسجيل.', 'Не удалось прочитать запись.'],
     'voice.fail.short': ['ההקלטה קצרה מדי. הקלט לפחות 2 שניות של דיבור.', 'The recording is too short. Record at least 2 seconds of speech.', 'التسجيل قصير جدًا. سجّل ثانيتين على الأقل من الكلام.', 'Запись слишком короткая. Запишите хотя бы 2 секунды речи.'],
     'voice.fail.download': ['לא הצלחנו להוריד את מנוע הקול. בדוק את החיבור לאינטרנט ונסה שוב.', "We couldn't download the voice engine. Check your connection and try again.", 'لم نتمكن من تنزيل محرك الصوت. تحقق من الاتصال وحاول مرة أخرى.', 'Не удалось загрузить голосовой движок. Проверьте интернет и попробуйте снова.'],
@@ -1097,6 +1104,11 @@
   // Input: pella.js fbank features [1, T, 160] + attention mask [1, T]; output: one logit (sigmoid = fake).
   const VOICE_MODEL_DIR = 'voice-model/';
   const VOICE_WINDOWS = 5;
+  // Speech detector (Silero VAD v5, MIT, 2 MB). pellav2 only knows speech: on music and background noise
+  // it said "fake" 92-100%, so we only send it 4-second windows that are mostly speech.
+  const VAD_MODEL_URL = 'https://huggingface.co/onnx-community/silero-vad/resolve/main/onnx/model.onnx';
+  const VAD_CHUNK = 512;              // 32 ms at 16 kHz
+  const MIN_SPEECH_SECONDS = 1.5;
   const TEXT_MODEL = 'onnx-community/tmr-ai-text-detector-ONNX'; // labels: human / ai
   const VIDEO_FRAMES = 8;
 
@@ -1257,6 +1269,56 @@
     }
   }
 
+  let vadSession = null;
+  async function getVadSession() {
+    if (!vadSession) {
+      vadSession = (async () => {
+        if (!ort) ort = await import(ORT_URL);
+        return ort.InferenceSession.create(await fetchModel(VAD_MODEL_URL), { executionProviders: ['wasm'] });
+      })().catch(e => { vadSession = null; throw e; });
+    }
+    return vadSession;
+  }
+
+  // Speech probability for every 32 ms of 16 kHz audio (Silero v5: 512 samples + 64 samples of context).
+  async function speechProbs(x) {
+    const vad = await getVadSession();
+    let state = new ort.Tensor('float32', new Float32Array(2 * 128), [2, 1, 128]);
+    const sr = new ort.Tensor('int64', BigInt64Array.from([BigInt(PELLA_SR)]), []);
+    let context = new Float32Array(64);
+    const probs = [];
+    for (let s = 0; s + VAD_CHUNK <= x.length; s += VAD_CHUNK) {
+      const chunk = new Float32Array(64 + VAD_CHUNK);
+      chunk.set(context, 0);
+      chunk.set(x.subarray(s, s + VAD_CHUNK), 64);
+      const out = await vad.run({ input: new ort.Tensor('float32', chunk, [1, chunk.length]), state, sr });
+      probs.push(out.output.data[0]);
+      state = out.stateN;
+      context = x.slice(s + VAD_CHUNK - 64, s + VAD_CHUNK);
+    }
+    return probs;
+  }
+
+  // Pick up to VOICE_WINDOWS non-overlapping 4-second windows with the most speech (at least half speech).
+  // Returns sample offsets. A clip of 4 s or less is one window (the minimum-speech check ran already).
+  function speechWindows(probs) {
+    const perWin = PELLA_CROP / VAD_CHUNK;
+    const speech = probs.map(p => (p > 0.5 ? 1 : 0));
+    if (speech.length <= perWin) return [0];
+    const candidates = [];
+    for (let c = 0; c + perWin <= speech.length; c += Math.round(perWin / 4)) {
+      const frac = speech.slice(c, c + perWin).reduce((a, b) => a + b, 0) / perWin;
+      if (frac >= 0.5) candidates.push({ start: c * VAD_CHUNK, frac });
+    }
+    candidates.sort((a, b) => b.frac - a.frac);
+    const picked = [];
+    for (const cnd of candidates) {
+      if (picked.length >= VOICE_WINDOWS) break;
+      if (picked.every(p => Math.abs(p.start - cnd.start) >= PELLA_CROP)) picked.push(cnd);
+    }
+    return picked.map(p => p.start).sort((a, b) => a - b);
+  }
+
   async function scoreVoice(file) {
     let mono;
     try {
@@ -1265,15 +1327,19 @@
       throw stageError('decode', e);
     }
     if (mono.length < PELLA_SR / 2) throw stageError('short', 'under half a second');
-    let starts = [0];
-    if (mono.length > PELLA_CROP) {
-      starts = [];
-      for (let s = 0; s + PELLA_CROP <= mono.length; s += PELLA_CROP) starts.push(s);
-      if (starts.length > VOICE_WINDOWS) {
-        const n = starts.length;
-        starts = Array.from({ length: VOICE_WINDOWS }, (_, i) => starts[Math.round(i * (n - 1) / (VOICE_WINDOWS - 1))]);
-      }
+
+    // Only speech goes to the voice engine.
+    setProgress(t('scan.vad'));
+    let probs;
+    try {
+      probs = await speechProbs(mono);
+    } catch (e) {
+      throw stageError('download', e);
     }
+    const speechSeconds = probs.filter(p => p > 0.5).length * VAD_CHUNK / PELLA_SR;
+    if (speechSeconds < MIN_SPEECH_SECONDS) throw stageError('nospeech', speechSeconds.toFixed(1) + ' s of speech');
+    const starts = speechWindows(probs);
+    if (!starts.length) throw stageError('nospeech', 'no window with enough speech');
     const session = await getVoiceSession();
     const windows = [];
     for (let i = 0; i < starts.length; i++) {
@@ -1462,6 +1528,19 @@
     v.preload = 'auto';
     v.src = URL.createObjectURL(file);
     await new Promise((res, rej) => { v.onloadeddata = res; v.onerror = () => rej(new Error('video')); });
+    // Seek and wait, but never hang: some files never fire "seeked" for odd positions.
+    const seek = at => new Promise(r => {
+      const done = () => { clearTimeout(timer); v.onseeked = null; r(); };
+      const timer = setTimeout(done, 5000);
+      v.onseeked = done;
+      v.currentTime = at;
+    });
+    // Recordings made in a browser (and some phone videos) have no duration in their header.
+    // Seeking far past the end makes the browser scan the file and fill it in.
+    if (!isFinite(v.duration)) {
+      await seek(1e7);
+      if (!isFinite(v.duration)) throw new Error('video duration unknown');
+    }
     const canvas = document.createElement('canvas');
     canvas.width = v.videoWidth;
     canvas.height = v.videoHeight;
@@ -1469,8 +1548,7 @@
     const frames = [];
     for (let i = 0; i < n; i++) {
       const at = v.duration * (i + 0.5) / n;
-      v.currentTime = at;
-      await new Promise(r => { v.onseeked = r; });
+      await seek(at);
       ctx.drawImage(v, 0, 0);
       frames.push({ t: at, url: canvas.toDataURL('image/jpeg', 0.92) });
     }
@@ -1589,20 +1667,41 @@
       const perFrame = scores.map(s => combine(s));
       const fakeFrames = perFrame.filter(c => c.verdict === 'fake').length;
       const maybeFrames = perFrame.filter(c => c.verdict === 'maybe').length;
-      const verdict = fakeFrames >= Math.max(2, Math.ceil(frames.length / 4)) ? 'fake'
+      let verdict = fakeFrames >= Math.max(2, Math.ceil(frames.length / 4)) ? 'fake'
         : fakeFrames >= 1 || maybeFrames >= 2 ? 'maybe' : 'real';
       const meanPct = Math.round(perFrame.reduce((a, c) => a + c.pct, 0) / perFrame.length);
-      const pct = verdict === 'fake' ? Math.max(70, meanPct) : verdict === 'maybe' ? Math.min(69, Math.max(31, meanPct)) : Math.min(30, meanPct);
+      let pct = verdict === 'fake' ? Math.max(70, meanPct) : verdict === 'maybe' ? Math.min(69, Math.max(31, meanPct)) : Math.min(30, meanPct);
+      let proSub = t('sub.frames', { n: fakeFrames + maybeFrames, total: frames.length });
       const half = duration / frames.length / 2;
       const flagged = frames.map((f, i) => ({ ...f, c: perFrame[i] })).filter(f => f.c.verdict !== 'real');
-      showResult(buildResult('video', file.name, label ? 98 : pct, {
-        verdict,
-        proSub: t('sub.frames', { n: fakeFrames + maybeFrames, total: frames.length }),
-        total: duration,
-        segments: flagged.map(f => [Math.max(0, f.t - half), Math.min(duration, f.t + half)]),
-        marks: flagged.map(f => [f.t, t('mark.frame', { p: f.c.pct })]),
-        bars: frames.map((f, i) => [t('bar.frame', { t: fmtTime(f.t) }), perFrame[i].pct]),
-        ...labelled
+      const segments = flagged.map(f => [Math.max(0, f.t - half), Math.min(duration, f.t + half)]);
+      const marks = flagged.map(f => [f.t, t('mark.frame', { p: f.c.pct })]);
+      const bars = frames.map((f, i) => [t('bar.frame', { t: fmtTime(f.t) }), perFrame[i].pct]);
+
+      // The voice in the video: many deepfakes pair a real-looking picture with a cloned voice.
+      // No audio track or no speech → we simply skip this part.
+      let voice = null;
+      try { voice = await scoreVoice(file); } catch (e) { console.info('video voice skipped:', e.stage || e); }
+      if (voice) {
+        const vMean = voice.windows.reduce((a, w) => a + w.p, 0) / voice.windows.length;
+        bars.push([t('bar.videoVoice'), Math.round(vMean * 100)]);
+        for (const w of voice.windows.filter(w => w.p >= 0.5)) {
+          segments.push([w.start, Math.min(duration, w.start + 4)]);
+          marks.push([w.start, t('mark.videoVoice', { p: Math.round(w.p * 100) })]);
+        }
+        // pellav2 separates sharply (0.1% real vs 99.9% fake in our tests), so a confident fake voice
+        // (90%+) makes the whole video fake: a cloned voice on real footage is still a deepfake.
+        if (vMean >= 0.5) {
+          const pictureFake = verdict !== 'real';
+          verdict = pictureFake || vMean >= 0.9 ? 'fake' : 'maybe';
+          pct = verdict === 'fake' ? Math.max(pct, 70, Math.round(vMean * 100)) : Math.max(pct, 50);
+          proSub = t(pictureFake ? 'sub.videoBoth' : verdict === 'fake' ? 'sub.videoVoiceFake' : 'sub.videoVoice');
+        }
+      }
+      marks.sort((a, b) => a[0] - b[0]);
+
+      showResult(buildResult('video', file.name, label ? 98 : Math.min(98, pct), {
+        verdict, proSub, total: duration, segments, marks, bars, ...labelled
       }));
     } catch (e) {
       console.error(e);
