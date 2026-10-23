@@ -743,7 +743,8 @@
     'rp.disclaimer': ['התוצאה היא הערכה של מערכת AI ואינה ודאית ב-100%.', "This result is an AI estimate and isn't 100% certain.", 'هذه النتيجة تقدير من نظام ذكاء اصطناعي وليست مؤكدة 100%.', 'Результат — оценка ИИ и не гарантирован на 100%.'],
     'badge.live': ['בדיקה אמיתית', 'Live check', 'فحص حقيقي', 'Реальная проверка'],
     'badge.demo': ['דוגמה מוכנה', 'Demo example', 'مثال جاهز', 'Демо-пример'],
-    'toast.share': ['בגרסה המלאה: תמונת תוצאה תישלח בוואטסאפ', 'In the full version, a result image is sent on WhatsApp', 'في النسخة الكاملة ستُرسل صورة النتيجة عبر واتساب', 'В полной версии картинка с результатом уйдёт в WhatsApp'],
+    'share.text': ['בדקתי את זה ב-FakeBreak: {verdict}. בדקו גם אתם:', 'I checked this with FakeBreak: {verdict}. Check yours too:', 'فحصت هذا في FakeBreak: {verdict}. افحصوا أنتم أيضًا:', 'Я проверил это в FakeBreak: {verdict}. Проверьте и вы:'],
+    'share.footer': ['נבדק באפליקציית FakeBreak', 'Checked with FakeBreak', 'تم الفحص في FakeBreak', 'Проверено в FakeBreak'],
     'toast.errFile': ['משהו השתבש בבדיקה. נסה שוב או נסה קובץ אחר.', 'Something went wrong. Try again or try another file.', 'حدث خطأ ما. حاول مرة أخرى أو جرّب ملفًا آخر.', 'Что-то пошло не так. Попробуйте ещё раз или другой файл.'],
     'toast.errText': ['משהו השתבש בבדיקה. נסה שוב.', 'Something went wrong. Try again.', 'حدث خطأ ما. حاول مرة أخرى.', 'Что-то пошло не так. Попробуйте ещё раз.'],
 
@@ -1512,8 +1513,109 @@
     }, 50));
   }
 
-  function share() {
-    toast(t('toast.share'));
+  const APP_URL = 'https://steinfeldan-max.github.io/fakebreak/';
+
+  // Draw a 1080×1080 result card (verdict only, never the user's file) for sharing.
+  function shareImage(d) {
+    const S = 1080;
+    const canvas = document.createElement('canvas');
+    canvas.width = S;
+    canvas.height = S;
+    const ctx = canvas.getContext('2d');
+    const font = (size, weight = 500) => `${weight} ${size}px Rubik, system-ui, sans-serif`;
+    ctx.fillStyle = '#26215C';
+    ctx.fillRect(0, 0, S, S);
+
+    // Logo
+    ctx.textAlign = 'center';
+    ctx.direction = 'ltr';
+    ctx.font = font(64, 700);
+    const fakeW = ctx.measureText('Fake').width, breakW = ctx.measureText('Break').width;
+    const x0 = S / 2 - (fakeW + breakW) / 2;
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText('Fake', x0, 130);
+    ctx.fillStyle = '#F0997B';
+    ctx.fillRect(x0, 108, fakeW, 7);
+    ctx.fillText('Break', x0 + fakeW, 130);
+
+    // Verdict circle with icon
+    const color = COLORS[d.verdict];
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(S / 2, 360, 150, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 26;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    if (d.verdict === 'fake') {
+      ctx.moveTo(S / 2 - 60, 300); ctx.lineTo(S / 2 + 60, 420);
+      ctx.moveTo(S / 2 + 60, 300); ctx.lineTo(S / 2 - 60, 420);
+    } else if (d.verdict === 'real') {
+      ctx.moveTo(S / 2 - 70, 365); ctx.lineTo(S / 2 - 20, 415); ctx.lineTo(S / 2 + 75, 305);
+    } else {
+      ctx.arc(S / 2, 325, 42, Math.PI * 1.1, Math.PI * 2.4);
+      ctx.lineTo(S / 2, 395);
+      ctx.moveTo(S / 2, 450); ctx.lineTo(S / 2, 451);
+    }
+    ctx.stroke();
+
+    // Title, percentage, explanation (wrapped)
+    ctx.textAlign = 'center';
+    ctx.direction = RTL.includes(lang) ? 'rtl' : 'ltr';
+    ctx.fillStyle = color;
+    ctx.font = font(76, 700);
+    ctx.fillText(d.simpleTitle, S / 2, 640);
+    let y = 720;
+    if (d.pct != null) {
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = font(48);
+      ctx.fillText(`AI ${d.pct}%`, S / 2, y);
+      y += 80;
+    }
+    ctx.fillStyle = '#EEEDFE';
+    ctx.font = font(38, 400);
+    const words = d.simpleLine.split(' ');
+    let line = '';
+    for (const w of words) {
+      const test = line ? line + ' ' + w : w;
+      if (ctx.measureText(test).width > S - 180 && line) {
+        ctx.fillText(line, S / 2, y);
+        y += 54;
+        line = w;
+      } else {
+        line = test;
+      }
+    }
+    if (line) ctx.fillText(line, S / 2, y);
+
+    // Footer
+    ctx.fillStyle = '#AFA9EC';
+    ctx.font = font(32, 400);
+    ctx.fillText(t('share.footer'), S / 2, S - 90);
+    ctx.direction = 'ltr';
+    ctx.fillText(APP_URL.replace('https://', '').replace(/\/$/, ''), S / 2, S - 45);
+    return canvas;
+  }
+
+  // Share the result: the phone's share sheet (pick WhatsApp) with the image, or WhatsApp with text as a fallback.
+  async function share() {
+    const d = current;
+    if (!d) return;
+    const text = t('share.text', { verdict: d.simpleTitle + (d.pct != null ? ` (AI ${d.pct}%)` : '') }) + ' ' + APP_URL;
+    try {
+      const blob = await new Promise(res => shareImage(d).toBlob(res, 'image/png'));
+      const file = new File([blob], 'fakebreak-result.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], text });
+        return;
+      }
+    } catch (e) {
+      if (e.name === 'AbortError') return; // user closed the share sheet
+    }
+    window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
   }
 
   function toast(msg) {
