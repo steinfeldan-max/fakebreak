@@ -331,7 +331,7 @@
   .marks .t { direction: ltr; color: var(--coral); font-weight: 500; }
   .heat { position: relative; border-radius: 12px; overflow: hidden; line-height: 0; }
   .heat img { width: 100%; display: block; }
-  .heat-grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); direction: ltr; }
+  .heat-grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 1fr); direction: ltr; }
   .heat-grid div { border: 1px solid rgba(255, 255, 255, .15); }
   .heat-note { font-size: 12px; color: #AFA9EC; margin-top: 8px; line-height: 1.5; }
   .bar-row { margin-bottom: 10px; }
@@ -730,7 +730,9 @@
     'sub.capture': ['בקובץ נמצא אישור דיגיטלי שהתמונה צולמה במצלמה (Content Credentials).', 'The file has a digital certificate that it was captured by a camera (Content Credentials).', 'يحتوي الملف على شهادة رقمية بأنها التُقطت بكاميرا (Content Credentials).', 'В файле есть цифровое подтверждение, что снимок сделан камерой (Content Credentials).'],
     'bar.camera': ['פרטי מצלמה בקובץ', 'Camera details in the file', 'بيانات الكاميرا في الملف', 'Данные камеры в файле'],
     'rp.heat':['מפת חום: אזורים שנראים כמו AI', 'Heatmap: areas that look AI-made', 'خريطة حرارية: مناطق تبدو مصنوعة بالذكاء الاصطناعي', 'Тепловая карта: области, похожие на ИИ'],
-    'rp.heatNote': ['אדום = חשוד יותר. זו הערכה גסה לפי אזורים, לא סימון מדויק של כל פיקסל.', 'Red = more suspicious. A rough estimate by area, not an exact pixel-by-pixel map.', 'الأحمر = أكثر اشتباهًا. هذا تقدير تقريبي حسب المنطقة وليس تحديدًا دقيقًا لكل بكسل.', 'Красный = подозрительнее. Это грубая оценка по областям, а не точная карта пикселей.'],
+    'rp.heatNote': ['מסגרת אדומה = שני המנועים מצאו שם סימני AI. כתום = מנוע אחד חושד. זו הערכה לפי אזורים, לא סימון מדויק של כל פיקסל.', 'Red frame = both engines found AI traces there. Orange = one engine is suspicious. An estimate by area, not an exact pixel-by-pixel map.', 'إطار أحمر = وجد المحركان آثار ذكاء اصطناعي هناك. برتقالي = محرك واحد يشتبه. هذا تقدير حسب المنطقة وليس تحديدًا دقيقًا لكل بكسل.', 'Красная рамка = оба движка нашли там следы ИИ. Оранжевый = подозревает один движок. Это оценка по областям, а не точная карта пикселей.'],
+    'bar.patch': ['האזור הכי חשוד בתמונה', 'Most suspicious area', 'المنطقة الأكثر اشتباهًا', 'Самая подозрительная область'],
+    'sub.patch':['התמונה כולה נראית אמיתית, אבל באזור קטן בה נמצאו סימני AI חזקים. היזהר.', 'The image looks real overall, but strong AI traces were found in a small area. Be careful.', 'تبدو الصورة حقيقية إجمالًا، لكن وُجدت آثار قوية للذكاء الاصطناعي في منطقة صغيرة. كن حذرًا.', 'В целом снимок выглядит настоящим, но в небольшой области найдены явные следы ИИ. Будьте осторожны.'],
     'scan.heat': ['מסמן אזורים חשודים...', 'Marking suspicious areas...', 'جارٍ تحديد المناطق المشبوهة...', 'Отмечаем подозрительные области...'],
     'rp.none':['לא נמצאו קטעים חשודים', 'No suspicious parts found', 'لم يتم العثور على أجزاء مريبة', 'Подозрительных фрагментов нет'],
     'rp.details': ['פירוט הבדיקה', 'Check details', 'تفاصيل الفحص', 'Детали проверки'],
@@ -1110,23 +1112,33 @@
     return { pct: clamp(Math.min(30, main * 100)), verdict: 'real' };
   }
 
-  // Heatmap: score overlapping tiles of the image with the second engine (fast) to show which areas look AI.
-  // Returns a 3×3 grid of AI probabilities, row by row.
-  async function heatmap(src) {
-    const session = await getPeSession();
+  // Patch scan at full resolution. Shrinking a big image to 256px for the whole-image check can wipe out
+  // AI traces, so we also look at 12 small 256px patches (4×3 grid) without shrinking them.
+  // The fast second engine scores every patch (that's the heatmap); the main engine re-checks the 2 most
+  // suspicious ones. A patch counts as suspicious only when both engines flag it at 70%+.
+  const PATCH_COLS = 4, PATCH_ROWS = 3, PATCH_THRESHOLD = 0.7;
+
+  async function patchScan(src) {
+    const [main, second] = await Promise.all([getImageSession(), getPeSession()]);
     const img = new Image();
     img.src = src;
     await img.decode();
-    const W = img.naturalWidth, H = img.naturalHeight, tw = W / 2, th = H / 2;
-    const cells = [];
-    for (let r = 0; r < 3; r++) {
-      for (let c = 0; c < 3; c++) {
-        const region = [c * (W - tw) / 2, r * (H - th) / 2, tw, th];
-        const out = await session.run({ [session.inputNames[0]]: toTensor(img, 256, true, undefined, undefined, region) });
-        cells.push(softmaxFirst(out[session.outputNames[0]].data));
+    const W = img.naturalWidth, H = img.naturalHeight, S = Math.min(256, W, H);
+    const patches = [];
+    for (let r = 0; r < PATCH_ROWS; r++) {
+      for (let c = 0; c < PATCH_COLS; c++) {
+        const region = [c * (W - S) / (PATCH_COLS - 1), r * (H - S) / (PATCH_ROWS - 1), S, S];
+        const out = await second.run({ [second.inputNames[0]]: toTensor(img, 256, true, undefined, undefined, region) });
+        patches.push({ region, second: softmaxFirst(out[second.outputNames[0]].data), main: null });
       }
     }
-    return cells;
+    const top = [...patches].sort((a, b) => b.second - a.second).slice(0, 2);
+    for (const p of top) {
+      const out = await main.run({ pixel_values: toTensor(img, IMAGE_SIZE, false, IMAGE_MEAN, IMAGE_STD, p.region) });
+      p.main = softmaxFirst(out.logits.data);
+    }
+    const flagged = p => p.main != null && p.main >= PATCH_THRESHOLD && p.second >= PATCH_THRESHOLD;
+    return { cells: patches.map(p => ({ p: p.second, flagged: flagged(p) })), suspicious: patches.some(flagged) };
   }
 
   // Grab evenly spaced frames from a video file as JPEG data URLs.
@@ -1201,10 +1213,16 @@
         const url = URL.createObjectURL(file);
         const s = await scoreImage(url);
         setProgress(t('scan.heat'));
-        const heat = await heatmap(url);
+        const patches = await patchScan(url);
+        const heat = patches.cells;
         let c = combine(s);
         let proSub = c.split ? t('sub.split') : null;
-        const bars = [[t('bar.engine1'), Math.round(s.main * 100)], [t('bar.engine2'), Math.round(s.second * 100)]];
+        if (patches.suspicious && c.verdict === 'real') {
+          c = { pct: 55, verdict: 'maybe' };
+          proSub = t('sub.patch');
+        }
+        const bars = [[t('bar.engine1'), Math.round(s.main * 100)], [t('bar.engine2'), Math.round(s.second * 100)],
+          [t('bar.patch'), Math.round(Math.max(...heat.map(h => h.p)) * 100)]];
 
         // 2. Proof of a real camera: camera credentials settle it; plain EXIF camera details move the verdict one step toward "real".
         const camera = label ? null : cameraModel(buf);
@@ -1430,9 +1448,10 @@
     heatCard.style.display = d.heat ? '' : 'none';
     if (d.heat) {
       document.getElementById('rp-heat-img').src = d.preview;
-      document.getElementById('rp-heat-grid').innerHTML = d.heat.map(p => {
-        const color = p >= 0.5 ? `rgba(226, 75, 74, ${(0.25 + (p - 0.5)).toFixed(2)})` : 'rgba(93, 202, 165, 0.12)';
-        return `<div style="background:${color}"></div>`;
+      document.getElementById('rp-heat-grid').innerHTML = d.heat.map(({ p, flagged }) => {
+        const color = flagged ? 'rgba(226, 75, 74, 0.7)'
+          : p >= 0.5 ? `rgba(239, 159, 39, ${(0.15 + (p - 0.5) * 0.6).toFixed(2)})` : 'rgba(93, 202, 165, 0.12)';
+        return `<div style="background:${color}${flagged ? ';outline:3px solid #E24B4A;outline-offset:-3px' : ''}"></div>`;
       }).join('');
     }
 
