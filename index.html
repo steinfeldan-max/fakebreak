@@ -186,7 +186,29 @@
   #home-pro .top { display: flex; justify-content: space-between; align-items: center; }
   #home-pro .logo { font-size: 22px; }
   #home-pro h1 { font-size: 22px; font-weight: 500; }
-  .scan-options { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
+  .scan-options { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 8px; }
+
+  /* Recording */
+  #record { align-items: center; text-align: center; gap: 20px; }
+  #record.simple { background: #fff; color: var(--ink); }
+  #record.pro { background: var(--ink); color: #fff; }
+  #record .top { align-self: stretch; display: flex; justify-content: space-between; align-items: center; }
+  #record.simple .switch { border: 2px solid var(--violet); color: var(--ink); font-size: 16px; }
+  #record.pro .switch { border: 1px solid var(--violet); color: #fff; }
+  #record h1 { font-size: 28px; }
+  #record .hint { font-size: 16px; line-height: 1.5; color: var(--muted); }
+  #record.pro .hint { color: #AFA9EC; }
+  .mic {
+    width: 150px; height: 150px; border-radius: 50%; border: none; cursor: pointer;
+    background: var(--coral); display: flex; align-items: center; justify-content: center; margin-top: 16px;
+  }
+  .mic svg { width: 64px; height: 64px; stroke: var(--ink); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .mic.on { background: var(--red); animation: pulse 1.2s ease-in-out infinite; }
+  .mic.on svg { stroke: #fff; }
+  @keyframes pulse { 50% { transform: scale(1.06); } }
+  #rec-time { font-size: 36px; font-weight: 700; direction: ltr; }
+  #rec-label { font-size: 20px; font-weight: 500; }
+  #rec-err { color: var(--red); font-size: 15px; min-height: 1.2em; }
   .drop-pro {
     border: 2px dashed var(--violet);
     border-radius: 20px;
@@ -438,6 +460,7 @@
       <span data-t="home.drop"></span>
     </div>
     <button class="btn btn-text-simple" onclick="openText()" data-t="home.textBtn"></button>
+    <button class="btn btn-text-simple" onclick="openRecord()" data-t="home.record"></button>
   </section>
 
   <!-- Screen 3b: home, detailed mode -->
@@ -460,6 +483,11 @@
         <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
         <div class="big" data-t="home.text"></div>
         <div class="small" data-t="home.textSub"></div>
+      </button>
+      <button class="drop-pro" onclick="openRecord()">
+        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+        <div class="big" data-t="home.recordShort"></div>
+        <div class="small" data-t="home.recordSub"></div>
       </button>
     </div>
     <div class="stats">
@@ -487,6 +515,22 @@
     <textarea id="text-input" dir="auto" data-t-ph="text.placeholder"></textarea>
     <p class="err" id="text-err"></p>
     <button class="btn btn-primary" onclick="checkText()" data-t="text.check"></button>
+  </section>
+
+  <!-- Screen: voice recording -->
+  <section class="screen" id="record">
+    <div class="top">
+      <div class="logo"><span><span class="fake">Fake</span><span class="break">Break</span></span></div>
+      <button class="switch" onclick="stopRecording(false); goHome()" data-t="text.back"></button>
+    </div>
+    <h1 data-t="rec.title"></h1>
+    <p class="hint" data-t="rec.hint"></p>
+    <button class="mic" id="mic-btn" onclick="toggleRecording()" aria-label="Record">
+      <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+    </button>
+    <div id="rec-time">0:00</div>
+    <div id="rec-label"></div>
+    <p id="rec-err"></p>
   </section>
 
   <!-- Screen 4: scanning -->
@@ -607,7 +651,16 @@
     'voice.sl': ['קולות מזויפים קשים מאוד לזיהוי. אם מבקשים ממך כסף או סוד, נתק והתקשר בעצמך למספר שאתה מכיר.', 'Fake voices are very hard to detect. If someone asks for money or secrets, hang up and call them back on a number you know.', 'الأصوات المزيفة صعبة الكشف جدًا. إذا طلب أحدهم مالًا أو أسرارًا، أغلق الخط واتصل به على رقم تعرفه.', 'Поддельные голоса очень трудно распознать. Если просят денег или секретов — положите трубку и перезвоните на известный вам номер.'],
     'voice.pt': ['לא נבדק', 'Not checked', 'لم يُفحص', 'Не проверено'],
     'voice.ps': ['ניסינו מנוע חינמי לזיהוי קול, והוא תפס רק 1 מתוך 10 קולות מזויפים, אז לא נציג תוצאה שעלולה להטעות. כן בדקנו אם יש בקובץ סימון AI. טיפ: קבעו מילת קוד משפחתית.', "We tried a free voice-detection engine and it caught only 1 of 10 fake voices, so we won't show a result that could mislead you. We did check the file for an AI label. Tip: agree on a family code word.", 'جرّبنا محرك كشف صوت مجاني فالتقط 1 فقط من 10 أصوات مزيفة، لذا لن نعرض نتيجة قد تضللك. لكننا فحصنا الملف بحثًا عن علامة ذكاء اصطناعي. نصيحة: اتفقوا على كلمة سر عائلية.', 'Мы попробовали бесплатный движок для голоса: он распознал только 1 из 10 поддельных голосов, поэтому мы не покажем результат, который может ввести в заблуждение. Метку ИИ в файле мы проверили. Совет: договоритесь о семейном кодовом слове.'],
-    'home.textBtn': ['בדיקת הודעה או טקסט', 'Check a message or text', 'فحص رسالة أو نص', 'Проверить сообщение или текст'],
+    'home.record': ['הקלטת קול לבדיקה', 'Record a voice to check', 'سجّل صوتًا لفحصه', 'Записать голос для проверки'],
+    'home.recordShort': ['הקלטה', 'Record', 'تسجيل', 'Запись'],
+    'home.recordSub': ['שיחה · קול', 'Call · Voice', 'مكالمة · صوت', 'Звонок · Голос'],
+    'rec.title': ['הקלטת קול', 'Record a voice', 'تسجيل صوت', 'Запись голоса'],
+    'rec.hint': ['אפשר להקליט שיחה: שים אותה על רמקול וקרב את הטלפון.', 'You can record a call: put it on speaker and hold the phone close.', 'يمكنك تسجيل مكالمة: شغّل مكبر الصوت وقرّب الهاتف.', 'Можно записать звонок: включите громкую связь и поднесите телефон ближе.'],
+    'rec.start': ['לחץ כדי להתחיל להקליט', 'Tap to start recording', 'اضغط لبدء التسجيل', 'Нажмите, чтобы начать запись'],
+    'rec.stop': ['לחץ כדי לעצור ולבדוק', 'Tap to stop and check', 'اضغط للإيقاف والفحص', 'Нажмите, чтобы остановить и проверить'],
+    'rec.denied': ['אין גישה למיקרופון. אשר גישה בהגדרות הדפדפן ונסה שוב.', 'No microphone access. Allow it in your browser settings and try again.', 'لا يوجد وصول إلى الميكروفون. اسمح به في إعدادات المتصفح وحاول مرة أخرى.', 'Нет доступа к микрофону. Разрешите его в настройках браузера и попробуйте снова.'],
+    'rec.name': ['הקלטה', 'Recording', 'تسجيل', 'Запись'],
+    'home.textBtn':['בדיקת הודעה או טקסט', 'Check a message or text', 'فحص رسالة أو نص', 'Проверить сообщение или текст'],
     'home.proTitle': ['סריקה חדשה', 'New scan', 'فحص جديد', 'Новая проверка'],
     'home.upload': ['העלה קובץ', 'Upload file', 'رفع ملف', 'Загрузить файл'],
     'home.uploadSub': ['וידאו · תמונה · קול', 'Video · Photo · Voice', 'فيديو · صورة · صوت', 'Видео · Фото · Голос'],
@@ -673,7 +726,10 @@
     'rs.shareWarn': ['שלח אזהרה למשפחה', 'Warn your family', 'أرسل تحذيرًا للعائلة', 'Предупредить семью'],
     'rs.again': ['לבדוק משהו אחר', 'Check something else', 'افحص شيئًا آخر', 'Проверить другое'],
     'rp.where': ['איפה זוהה הזיוף', 'Where the fake was found', 'أين تم كشف التزييف', 'Где найдена подделка'],
-    'rp.heat': ['מפת חום: אזורים שנראים כמו AI', 'Heatmap: areas that look AI-made', 'خريطة حرارية: مناطق تبدو مصنوعة بالذكاء الاصطناعي', 'Тепловая карта: области, похожие на ИИ'],
+    'sub.camera': ['בקובץ נמצאו פרטי מצלמה ({cam}), סימן שהתמונה צולמה במצלמה אמיתית.', 'The file has camera details ({cam}), a sign it was taken with a real camera.', 'يحتوي الملف على بيانات كاميرا ({cam})، وهذه علامة على أنها التُقطت بكاميرا حقيقية.', 'В файле есть данные камеры ({cam}) — признак того, что снимок сделан настоящей камерой.'],
+    'sub.capture': ['בקובץ נמצא אישור דיגיטלי שהתמונה צולמה במצלמה (Content Credentials).', 'The file has a digital certificate that it was captured by a camera (Content Credentials).', 'يحتوي الملف على شهادة رقمية بأنها التُقطت بكاميرا (Content Credentials).', 'В файле есть цифровое подтверждение, что снимок сделан камерой (Content Credentials).'],
+    'bar.camera': ['פרטי מצלמה בקובץ', 'Camera details in the file', 'بيانات الكاميرا في الملف', 'Данные камеры в файле'],
+    'rp.heat':['מפת חום: אזורים שנראים כמו AI', 'Heatmap: areas that look AI-made', 'خريطة حرارية: مناطق تبدو مصنوعة بالذكاء الاصطناعي', 'Тепловая карта: области, похожие на ИИ'],
     'rp.heatNote': ['אדום = חשוד יותר. זו הערכה גסה לפי אזורים, לא סימון מדויק של כל פיקסל.', 'Red = more suspicious. A rough estimate by area, not an exact pixel-by-pixel map.', 'الأحمر = أكثر اشتباهًا. هذا تقدير تقريبي حسب المنطقة وليس تحديدًا دقيقًا لكل بكسل.', 'Красный = подозрительнее. Это грубая оценка по областям, а не точная карта пикселей.'],
     'scan.heat': ['מסמן אזורים חשודים...', 'Marking suspicious areas...', 'جارٍ تحديد المناطق المشبوهة...', 'Отмечаем подозрительные области...'],
     'rp.none':['לא נמצאו קטעים חשודים', 'No suspicious parts found', 'لم يتم العثور على أجزاء مريبة', 'Подозрительных фрагментов нет'],
@@ -949,6 +1005,46 @@
     return Math.exp(a - m) / (Math.exp(a - m) + Math.exp(b - m));
   }
 
+  // Camera make/model from a JPEG's EXIF data (e.g. "Apple iPhone 15"), or null.
+  // AI images almost never have it; WhatsApp and screenshots strip it from real photos too.
+  function cameraModel(buf) {
+    const v = new DataView(buf);
+    if (v.byteLength < 4 || v.getUint16(0) !== 0xFFD8) return null;
+    let o = 2;
+    while (o + 10 < v.byteLength) {
+      const marker = v.getUint16(o);
+      if ((marker & 0xFF00) !== 0xFF00 || marker === 0xFFDA) return null;
+      const len = v.getUint16(o + 2);
+      if (marker === 0xFFE1 && v.getUint32(o + 4) === 0x45786966) { // "Exif"
+        const tiff = o + 10;
+        const le = v.getUint16(tiff) === 0x4949;
+        const u16 = p => v.getUint16(p, le), u32 = p => v.getUint32(p, le);
+        const ifd = tiff + u32(tiff + 4);
+        const found = {};
+        for (let i = 0; i < u16(ifd); i++) {
+          const e = ifd + 2 + i * 12;
+          const tag = u16(e);
+          if (tag !== 0x010F && tag !== 0x0110) continue; // Make, Model
+          const count = u32(e + 4);
+          const at = count > 4 ? tiff + u32(e + 8) : e + 8;
+          let s = '';
+          for (let k = 0; k < count - 1 && at + k < v.byteLength; k++) s += String.fromCharCode(v.getUint8(at + k));
+          found[tag] = s.trim();
+        }
+        const name = [found[0x010F], found[0x0110]].filter(Boolean).join(' ');
+        return name || null;
+      }
+      o += 2 + len;
+    }
+    return null;
+  }
+
+  // Content Credentials saying the photo was captured by a camera (newer Pixel/Samsung phones add these).
+  function hasCaptureCredential(buf) {
+    const text = new TextDecoder('latin1').decode(new Uint8Array(buf).subarray(0, 2 * 1024 * 1024));
+    return text.includes('digitalCapture');
+  }
+
   // Name of the AI tool if the file carries an AI label in its metadata, else null.
   function findAiMarker(buf) {
     const bytes = new Uint8Array(buf);
@@ -1080,7 +1176,8 @@
     showScanning(file.name, t(kind === 'video' ? 'scan.video' : 'scan.connecting'));
     try {
       // 1. AI label inside the file: when present, it's the most reliable signal there is.
-      const label = findAiMarker(await file.arrayBuffer());
+      const buf = await file.arrayBuffer();
+      const label = findAiMarker(buf);
       const labelled = label ? {
         verdict: 'fake',
         simpleLine: t('line.label'),
@@ -1105,12 +1202,25 @@
         const s = await scoreImage(url);
         setProgress(t('scan.heat'));
         const heat = await heatmap(url);
-        const c = combine(s);
+        let c = combine(s);
+        let proSub = c.split ? t('sub.split') : null;
         const bars = [[t('bar.engine1'), Math.round(s.main * 100)], [t('bar.engine2'), Math.round(s.second * 100)]];
+
+        // 2. Proof of a real camera: camera credentials settle it; plain EXIF camera details move the verdict one step toward "real".
+        const camera = label ? null : cameraModel(buf);
+        const captured = !label && hasCaptureCredential(buf);
+        if (captured) {
+          c = { pct: Math.min(c.pct, 10), verdict: 'real' };
+          proSub = t('sub.capture');
+        } else if (camera) {
+          c = c.verdict === 'fake' ? { pct: 50, verdict: 'maybe' } : { pct: Math.min(c.pct, 15), verdict: 'real' };
+          proSub = t('sub.camera', { cam: camera });
+          bars.unshift([t('bar.camera'), 100]);
+        }
         if (label) bars.unshift([t('bar.label'), 100]);
         if (current && current.preview) URL.revokeObjectURL(current.preview);
         showResult(buildResult('image', file.name, label ? 98 : c.pct, {
-          verdict: c.verdict, bars, preview: url, heat, ...(c.split ? { proSub: t('sub.split') } : {}), ...labelled
+          verdict: c.verdict, bars, preview: url, heat, ...(proSub ? { proSub } : {}), ...labelled
         }));
         return;
       }
@@ -1189,6 +1299,64 @@
       openText();
       toast(t('toast.errText'));
     }
+  }
+
+  // ---------- Voice recording ----------
+
+  let recorder = null;
+  let recTimer = null;
+
+  function openRecord() {
+    document.getElementById('record').className = 'screen ' + mode;
+    document.getElementById('rec-time').textContent = '0:00';
+    document.getElementById('rec-label').textContent = t('rec.start');
+    document.getElementById('rec-err').textContent = '';
+    document.getElementById('mic-btn').classList.remove('on');
+    go('record');
+  }
+
+  function toggleRecording() {
+    if (recorder) stopRecording(true);
+    else startRecording();
+  }
+
+  async function startRecording() {
+    const err = document.getElementById('rec-err');
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (e) {
+      err.textContent = t('rec.denied');
+      return;
+    }
+    err.textContent = '';
+    const chunks = [];
+    recorder = new MediaRecorder(stream);
+    recorder.ondataavailable = e => chunks.push(e.data);
+    recorder.onstop = () => {
+      stream.getTracks().forEach(tr => tr.stop());
+      if (recorder && recorder.analyze) {
+        const type = recorder.mimeType || 'audio/webm';
+        analyzeFile(new File([new Blob(chunks, { type })], t('rec.name') + '.webm', { type }));
+      }
+      recorder = null;
+    };
+    recorder.start();
+    const started = Date.now();
+    recTimer = setInterval(() => {
+      document.getElementById('rec-time').textContent = fmtTime((Date.now() - started) / 1000);
+    }, 250);
+    document.getElementById('mic-btn').classList.add('on');
+    document.getElementById('rec-label').textContent = t('rec.stop');
+  }
+
+  // Stop the recorder; when `analyze` is true the recording is sent for checking.
+  function stopRecording(analyze) {
+    clearInterval(recTimer);
+    document.getElementById('mic-btn').classList.remove('on');
+    if (!recorder) return;
+    recorder.analyze = analyze;
+    recorder.stop();
   }
 
   // ---------- Screens ----------
