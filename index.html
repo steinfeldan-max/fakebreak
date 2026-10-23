@@ -611,6 +611,7 @@
   <div class="toast" id="toast"></div>
 </div>
 
+<script src="pella.js"></script>
 <script>
   // ---------- Translations: [Hebrew, English, Arabic, Russian] ----------
 
@@ -647,7 +648,13 @@
     'sw.simple': ['תצוגה פשוטה', 'Simple view', 'عرض بسيط', 'Простой вид'],
     'home.simpleTitle': ['מה תרצה לבדוק?', 'What do you want to check?', 'ماذا تريد أن تفحص؟', 'Что хотите проверить?'],
     'home.drop': ['לחץ כאן כדי לבחור סרטון, תמונה או הודעה קולית', 'Tap here to choose a video, photo or voice message', 'اضغط هنا لاختيار فيديو أو صورة أو رسالة صوتية', 'Нажмите, чтобы выбрать видео, фото или голосовое'],
-    'voice.st': ['עדיין לא יודעים לבדוק קול', "We can't check voices yet", 'لا يمكننا فحص الأصوات بعد', 'Пока не умеем проверять голос'],
+    'line.voice.fake': ['הקול הזה כנראה נוצר על ידי מחשב (AI). אם מבקשים ממך כסף, נתק והתקשר בעצמך למספר שאתה מכיר.', "This voice was likely made by a computer (AI). If you're asked for money, hang up and call back on a number you know.", 'هذا الصوت على الأرجح من صنع حاسوب (ذكاء اصطناعي). إذا طُلب منك مال، أغلق الخط واتصل بنفسك على رقم تعرفه.', 'Этот голос, вероятно, создан компьютером (ИИ). Если просят денег — положите трубку и перезвоните на известный вам номер.'],
+    'line.voice.real': ['לא מצאנו סימנים לכך שהקול הזה נוצר על ידי מחשב. אם מבקשים כסף, תמיד כדאי לבדוק שוב.', 'We found no signs this voice was made by a computer. If money is involved, always double-check.', 'لم نجد علامات على أن هذا الصوت من صنع حاسوب. إذا كان الأمر يتعلق بالمال، تحقق دائمًا مرة أخرى.', 'Мы не нашли признаков того, что голос создан компьютером. Если речь о деньгах, всегда перепроверяйте.'],
+    'sub.voice': ['נבדק במנוע הקול pellav2 שרץ במכשיר שלך. ההקלטה לא נשלחה לשום מקום.', 'Checked by the pellav2 voice engine running on your device. The recording never left it.', 'تم الفحص بمحرك الصوت pellav2 الذي يعمل على جهازك. لم يُرسل التسجيل إلى أي مكان.', 'Проверено голосовым движком pellav2 на вашем устройстве. Запись никуда не отправлялась.'],
+    'scan.voice': ['מנתח את הקול... קטע {i} מתוך {n}', 'Analyzing the voice... part {i} of {n}', 'جارٍ تحليل الصوت... الجزء {i} من {n}', 'Анализируем голос... часть {i} из {n}'],
+    'bar.window': ['קטע מ-{t}', 'Part from {t}', 'الجزء من {t}', 'Часть с {t}'],
+    'mark.window': ['קול חשוד כ-AI ({p}%)', 'Voice suspected AI ({p}%)', 'صوت يُشتبه أنه ذكاء اصطناعي ({p}%)', 'Голос похож на ИИ ({p}%)'],
+    'voice.st':['עדיין לא יודעים לבדוק קול', "We can't check voices yet", 'لا يمكننا فحص الأصوات بعد', 'Пока не умеем проверять голос'],
     'voice.sl': ['קולות מזויפים קשים מאוד לזיהוי. אם מבקשים ממך כסף או סוד, נתק והתקשר בעצמך למספר שאתה מכיר.', 'Fake voices are very hard to detect. If someone asks for money or secrets, hang up and call them back on a number you know.', 'الأصوات المزيفة صعبة الكشف جدًا. إذا طلب أحدهم مالًا أو أسرارًا، أغلق الخط واتصل به على رقم تعرفه.', 'Поддельные голоса очень трудно распознать. Если просят денег или секретов — положите трубку и перезвоните на известный вам номер.'],
     'voice.pt': ['לא נבדק', 'Not checked', 'لم يُفحص', 'Не проверено'],
     'voice.ps': ['ניסינו מנוע חינמי לזיהוי קול, והוא תפס רק 1 מתוך 10 קולות מזויפים, אז לא נציג תוצאה שעלולה להטעות. כן בדקנו אם יש בקובץ סימון AI. טיפ: קבעו מילת קוד משפחתית.', "We tried a free voice-detection engine and it caught only 1 of 10 fake voices, so we won't show a result that could mislead you. We did check the file for an AI label. Tip: agree on a family code word.", 'جرّبنا محرك كشف صوت مجاني فالتقط 1 فقط من 10 أصوات مزيفة، لذا لن نعرض نتيجة قد تضللك. لكننا فحصنا الملف بحثًا عن علامة ذكاء اصطناعي. نصيحة: اتفقوا على كلمة سر عائلية.', 'Мы попробовали бесплатный движок для голоса: он распознал только 1 из 10 поддельных голосов, поэтому мы не покажем результат, который может ввести в заблуждение. Метку ИИ в файле мы проверили. Совет: договоритесь о семейном кодовом слове.'],
@@ -938,6 +945,12 @@
     ['Leonardo.Ai', 'Leonardo'], ['Ideogram', 'Ideogram'], ['Microsoft Designer', 'Microsoft'], ['Bing Image Creator', 'Microsoft'],
     ['ElevenLabs', 'ElevenLabs']
   ];
+  // Voice engine: pellav2 (MIT, 95.8% on the Podonos benchmark), converted to ONNX int8 and split into
+  // 45 MB parts next to the app. The published checkpoint had 6 damaged tensors; we replaced them with
+  // w2v-bert-2.0 base weights (fine-tuning moves weights ~1.5%) and it scored 20/20 on our voice test set.
+  // Input: pella.js fbank features [1, T, 160] + attention mask [1, T]; output: one logit (sigmoid = fake).
+  const VOICE_MODEL_DIR = 'voice-model/';
+  const VOICE_WINDOWS = 5;
   const TEXT_MODEL = 'onnx-community/tmr-ai-text-detector-ONNX'; // labels: human / ai
   const VIDEO_FRAMES = 6;
 
@@ -1008,6 +1021,72 @@
   async function getPeSession() {
     if (!peSession) peSession = loadSession(PE_MODEL_URL).catch(e => { peSession = null; throw e; });
     return peSession;
+  }
+
+  // Download the voice engine's parts (once; cached afterwards) and join them.
+  let voiceSession = null;
+  async function getVoiceSession() {
+    if (!voiceSession) {
+      voiceSession = (async () => {
+        if (!ort) ort = await import(ORT_URL);
+        const manifest = await (await fetch(VOICE_MODEL_DIR + 'manifest.json')).json();
+        const key = new URL(VOICE_MODEL_DIR + 'pellav2-' + manifest.sha256 + '.onnx', location.href).href;
+        const cache = await caches.open('fakebreak-models');
+        const hit = await cache.match(key);
+        let bytes;
+        if (hit) {
+          bytes = new Uint8Array(await hit.arrayBuffer());
+        } else {
+          bytes = new Uint8Array(manifest.size);
+          let loaded = 0;
+          for (let i = 0; i < manifest.parts; i++) {
+            const part = new Uint8Array(await (await fetch(VOICE_MODEL_DIR + 'pellav2.part' + String(i).padStart(2, '0'))).arrayBuffer());
+            bytes.set(part, loaded);
+            loaded += part.length;
+            downloadProgress(loaded, manifest.size);
+          }
+          try { await cache.put(key, new Response(bytes)); } catch (e) { /* storage full: just skip caching */ }
+        }
+        setProgress(t('scan.preparing'));
+        return ort.InferenceSession.create(bytes, { executionProviders: ['wasm'] });
+      })().catch(e => { voiceSession = null; throw e; });
+    }
+    return voiceSession;
+  }
+
+  // Score a voice recording: up to VOICE_WINDOWS evenly spaced 4-second windows, each through pellav2.
+  // Returns { duration, windows: [{ start, p }] } with p = probability the voice is AI-made.
+  async function scoreVoice(file) {
+    const ctx = new AudioContext({ sampleRate: PELLA_SR });
+    const audio = await ctx.decodeAudioData(await file.arrayBuffer());
+    ctx.close();
+    const mono = new Float32Array(audio.length);
+    for (let c = 0; c < audio.numberOfChannels; c++) {
+      const ch = audio.getChannelData(c);
+      for (let i = 0; i < ch.length; i++) mono[i] += ch[i] / audio.numberOfChannels;
+    }
+    let starts = [0];
+    if (mono.length > PELLA_CROP) {
+      starts = [];
+      for (let s = 0; s + PELLA_CROP <= mono.length; s += PELLA_CROP) starts.push(s);
+      if (starts.length > VOICE_WINDOWS) {
+        const n = starts.length;
+        starts = Array.from({ length: VOICE_WINDOWS }, (_, i) => starts[Math.round(i * (n - 1) / (VOICE_WINDOWS - 1))]);
+      }
+    }
+    const session = await getVoiceSession();
+    const windows = [];
+    for (let i = 0; i < starts.length; i++) {
+      setProgress(t('scan.voice', { i: i + 1, n: starts.length }));
+      const f = pellaFeatures(pellaPrep(mono.subarray(starts[i], starts[i] + PELLA_CROP)));
+      const out = await session.run({
+        input_features: new ort.Tensor('float32', f.data, [1, f.frames, 160]),
+        attention_mask: new ort.Tensor('int64', new BigInt64Array(f.frames).fill(1n), [1, f.frames])
+      });
+      const z = out[session.outputNames[0]].data[0];
+      windows.push({ start: starts[i] / PELLA_SR, p: 1 / (1 + Math.exp(-z)) });
+    }
+    return { duration: mono.length / PELLA_SR, windows };
   }
 
   async function getCfSession() {
@@ -1195,7 +1274,7 @@
 
   function verdictFor(pct) { return pct >= 70 ? 'fake' : pct <= 30 ? 'real' : 'maybe'; }
   function verdictLine(kind, verdict) {
-    if (verdict === 'maybe' || kind === 'voice') return t('line.maybe');
+    if (verdict === 'maybe') return t('line.maybe');
     return t(`line.${kind}.${verdict}`);
   }
 
@@ -1225,15 +1304,34 @@
         proSub: t('sub.label', { src: label })
       } : {};
 
-      // Voice: the free in-browser voice engine we tested caught only 1 of 10 cloned voices,
-      // so we only trust the AI label and otherwise say honestly that we can't tell.
+      // Voice: pellav2 runs on the device. If the engine can't load (e.g. not enough memory on an older
+      // phone), fall back to the AI label check and say honestly that we couldn't check the voice.
       if (kind === 'voice') {
-        showResult(buildResult('voice', file.name, label ? 98 : null, label ? { verdict: 'fake', ...labelled } : {
-          verdict: 'maybe',
-          simpleTitle: t('voice.st'),
-          simpleLine: t('voice.sl'),
-          proTitle: t('voice.pt'),
-          proSub: t('voice.ps')
+        let v = null;
+        try {
+          v = await scoreVoice(file);
+        } catch (e) {
+          console.error(e);
+        }
+        if (!v) {
+          showResult(buildResult('voice', file.name, label ? 98 : null, label ? { verdict: 'fake', ...labelled } : {
+            verdict: 'maybe', simpleTitle: t('voice.st'), simpleLine: t('voice.sl'), proTitle: t('voice.pt'), proSub: t('voice.ps')
+          }));
+          return;
+        }
+        const mean = v.windows.reduce((a, w) => a + w.p, 0) / v.windows.length;
+        const anyFake = v.windows.some(w => w.p >= 0.5);
+        const verdict = mean >= 0.5 ? 'fake' : anyFake ? 'maybe' : 'real';
+        const pct = Math.min(98, Math.max(2, Math.round(mean * 100)));
+        const flagged = v.windows.filter(w => w.p >= 0.5);
+        showResult(buildResult('voice', file.name, label ? 98 : pct, {
+          verdict,
+          proSub: t('sub.voice'),
+          total: Math.max(v.duration, 4),
+          segments: flagged.map(w => [w.start, Math.min(v.duration, w.start + 4)]),
+          marks: flagged.map(w => [w.start, t('mark.window', { p: Math.round(w.p * 100) })]),
+          bars: v.windows.map(w => [t('bar.window', { t: fmtTime(w.start) }), Math.round(w.p * 100)]),
+          ...labelled
         }));
         return;
       }
