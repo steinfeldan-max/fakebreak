@@ -1,0 +1,1050 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FakeBreak</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #26215C;
+    --ink-2: #3C3489;
+    --violet: #7F77DD;
+    --violet-soft: #EEEDFE;
+    --coral: #F0997B;
+    --coral-dark: #D85A30;
+    --mint: #5DCAA5;
+    --paper: #FFFFFF;
+    --muted: #6B6890;
+    --red: #E24B4A;
+    --red-soft: #FCEBEB;
+    --red-dark: #791F1F;
+    --green: #1D9E75;
+    --green-soft: #E1F5EE;
+    --green-dark: #085041;
+    --amber: #EF9F27;
+    --amber-soft: #FAEEDA;
+    --amber-dark: #633806;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Rubik', system-ui, sans-serif;
+    background: #E9E7F5;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  .phone {
+    width: 100%;
+    max-width: 390px;
+    height: 780px;
+    max-height: calc(100vh - 48px);
+    border-radius: 40px;
+    overflow: hidden;
+    position: relative;
+    background: var(--paper);
+    border: 10px solid #111;
+  }
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    padding: 48px 24px 32px;
+    overflow-y: auto;
+  }
+  .screen.active { display: flex; }
+
+  .logo { font-weight: 700; direction: ltr; display: inline-flex; align-items: center; gap: 8px; }
+  .logo .fake { text-decoration: line-through; text-decoration-color: var(--coral); text-decoration-thickness: 4px; }
+  .logo .break { color: var(--coral); }
+  .bolt { width: 1em; height: 1em; fill: var(--coral); }
+
+  .btn {
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
+    border-radius: 16px;
+    font-weight: 500;
+    transition: transform .1s;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: var(--coral); color: var(--ink); font-size: 20px; padding: 18px; width: 100%; }
+
+  /* Language */
+  #lang { background: var(--ink); color: #fff; gap: 14px; }
+  #lang .logo { font-size: 30px; justify-content: center; margin-bottom: 16px; }
+  #lang h1 { font-size: 26px; font-weight: 500; text-align: center; }
+  #lang .hint { font-size: 15px; color: #AFA9EC; text-align: center; margin-bottom: 8px; }
+  .lang-btn {
+    font-family: inherit;
+    background: var(--ink-2);
+    color: #fff;
+    border: 2px solid transparent;
+    border-radius: 18px;
+    padding: 16px 20px;
+    font-size: 22px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .lang-btn:hover { border-color: var(--coral); }
+  .lang-btn span { font-size: 14px; color: #AFA9EC; font-weight: 400; }
+  #lang .note { font-size: 13px; color: #8A85C9; text-align: center; margin-top: auto; }
+
+  /* Welcome */
+  #welcome { background: var(--ink); color: #fff; justify-content: space-between; text-align: center; }
+  #welcome .hero { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+  #welcome .logo { font-size: 44px; }
+  #welcome .tagline { font-size: 22px; color: var(--violet-soft); }
+  #welcome .sub { font-size: 16px; color: #AFA9EC; line-height: 1.6; max-width: 280px; }
+
+  /* Age choice */
+  #age { background: var(--violet-soft); color: var(--ink); gap: 16px; }
+  #age h1 { font-size: 28px; }
+  #age .hint { font-size: 16px; color: var(--muted); line-height: 1.5; margin-bottom: 8px; }
+  .choice {
+    background: #fff;
+    border: 2px solid transparent;
+    border-radius: 20px;
+    padding: 18px;
+    text-align: start;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-family: inherit;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .choice:hover { border-color: var(--violet); }
+  .choice .age-num { font-size: 22px; font-weight: 700; min-width: 84px; text-align: center; }
+  .choice .what { font-size: 15px; color: var(--muted); line-height: 1.4; }
+  .choice .what b { display: block; font-size: 18px; color: var(--ink); font-weight: 500; }
+  #age .note { font-size: 14px; color: var(--muted); text-align: center; margin-top: auto; }
+
+  /* Home: simple */
+  #home-simple { background: #fff; color: #1a1a1a; gap: 20px; }
+  #home-simple .top { display: flex; justify-content: space-between; align-items: center; }
+  #home-simple .logo { font-size: 26px; color: var(--ink); }
+  #home-simple h1 { font-size: 32px; line-height: 1.3; }
+  .drop-simple {
+    flex: 1;
+    min-height: 220px;
+    border: 4px dashed var(--violet);
+    border-radius: 28px;
+    background: var(--violet-soft);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    font-size: 26px;
+    font-weight: 500;
+    color: var(--ink);
+    cursor: pointer;
+    text-align: center;
+    padding: 16px;
+  }
+  .drop-simple svg { width: 72px; height: 72px; stroke: var(--ink); }
+  .btn-text-simple { background: #fff; color: var(--ink); border: 3px solid var(--violet); font-size: 22px; padding: 18px; width: 100%; }
+
+  /* Home: detailed */
+  #home-pro { background: var(--ink); color: #fff; gap: 18px; }
+  #home-pro .top { display: flex; justify-content: space-between; align-items: center; }
+  #home-pro .logo { font-size: 22px; }
+  #home-pro h1 { font-size: 22px; font-weight: 500; }
+  .scan-options { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
+  .drop-pro {
+    border: 2px dashed var(--violet);
+    border-radius: 20px;
+    padding: 22px 12px;
+    text-align: center;
+    background: var(--ink-2);
+    cursor: pointer;
+    color: #fff;
+    font-family: inherit;
+  }
+  .drop-pro .big { font-size: 17px; font-weight: 500; margin-top: 8px; }
+  .drop-pro .small { font-size: 12px; color: #AFA9EC; margin-top: 4px; }
+  .drop-pro svg { width: 36px; height: 36px; stroke: var(--coral); fill: none; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .stat { background: var(--ink-2); border-radius: 14px; padding: 12px 8px; text-align: center; }
+  .stat .n { font-size: 22px; font-weight: 700; color: var(--coral); }
+  .stat .l { font-size: 12px; color: #AFA9EC; margin-top: 2px; }
+  .recent h2 { font-size: 15px; font-weight: 500; color: #AFA9EC; margin-bottom: 10px; }
+  .row { display: flex; align-items: center; justify-content: space-between; background: var(--ink-2); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; font-size: 14px; cursor: pointer; border: 1px solid transparent; }
+  .row:hover { border-color: var(--violet); }
+  .pill { font-size: 13px; font-weight: 500; padding: 4px 10px; border-radius: 999px; direction: ltr; }
+  .pill.bad { background: #FAECE7; color: #993C1D; }
+  .pill.ok { background: #E1F5EE; color: #085041; }
+  .pill.maybe { background: var(--amber-soft); color: var(--amber-dark); }
+
+  .switch {
+    font-family: inherit;
+    background: none;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 8px 14px;
+  }
+  #home-simple .switch, #result-simple .switch, #text.simple .switch { border: 2px solid var(--violet); color: var(--ink); font-size: 16px; }
+  #home-pro .switch, #result-pro .switch, #text.pro .switch { border: 1px solid var(--violet); color: #fff; }
+
+  /* Text check */
+  #text { gap: 16px; }
+  #text .top { display: flex; justify-content: space-between; align-items: center; }
+  #text.simple { background: #fff; color: var(--ink); }
+  #text.pro { background: var(--ink); color: #fff; }
+  #text h1 { font-size: 28px; }
+  #text.pro h1 { font-size: 22px; font-weight: 500; }
+  #text textarea {
+    flex: 1;
+    min-height: 200px;
+    font-family: inherit;
+    border-radius: 20px;
+    padding: 16px;
+    resize: none;
+    line-height: 1.5;
+  }
+  #text.simple textarea { font-size: 22px; border: 3px solid var(--violet); background: var(--violet-soft); color: var(--ink); }
+  #text.pro textarea { font-size: 15px; border: 1px solid var(--violet); background: var(--ink-2); color: #fff; }
+  #text textarea::placeholder { color: #8A85C9; }
+  #text .hint { font-size: 14px; line-height: 1.5; }
+  #text.simple .hint { color: var(--muted); font-size: 16px; }
+  #text.pro .hint { color: #AFA9EC; }
+  #text .err { color: var(--red); font-size: 15px; min-height: 1em; }
+  #text.simple .btn-primary { font-size: 22px; padding: 20px; }
+
+  /* Scanning */
+  #scan { align-items: center; justify-content: center; gap: 24px; text-align: center; }
+  #scan.simple { background: #fff; color: var(--ink); }
+  #scan.pro { background: var(--ink); color: #fff; }
+  .spinner { width: 120px; height: 120px; border-radius: 50%; border: 10px solid var(--violet-soft); border-top-color: var(--coral); animation: spin 1s linear infinite; }
+  #scan.pro .spinner { border-color: var(--ink-2); border-top-color: var(--coral); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #scan .title { font-size: 28px; font-weight: 500; }
+  #scan .file { font-size: 15px; color: var(--muted); }
+  #scan.pro .file { color: #AFA9EC; }
+  #scan .progress { font-size: 15px; line-height: 1.5; max-width: 280px; }
+  #scan.simple .progress { color: var(--muted); font-size: 17px; }
+  #scan.pro .progress { color: var(--coral); }
+  .steps { list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 15px; text-align: start; min-width: 220px; }
+  .steps li { color: #6B6890; }
+  .steps li.done { color: var(--mint); }
+  .steps li.done::before { content: '✓ '; }
+  .steps li.now { color: #fff; }
+  .steps li.now::before { content: '● '; color: var(--coral); }
+
+  /* Result: simple */
+  #result-simple { background: #fff; color: #1a1a1a; gap: 20px; text-align: center; }
+  #result-simple .top { display: flex; justify-content: space-between; align-items: center; }
+  #result-simple .logo { font-size: 22px; color: var(--ink); }
+  .verdict-card { border-radius: 28px; padding: 32px 20px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .verdict-icon { width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .verdict-icon svg { width: 72px; height: 72px; stroke: #fff; stroke-width: 3.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .verdict-title { font-size: 34px; font-weight: 700; line-height: 1.2; }
+  .verdict-line { font-size: 22px; line-height: 1.5; }
+  .v-fake { background: var(--red-soft); color: var(--red-dark); }
+  .v-fake .verdict-icon { background: var(--red); }
+  .v-real { background: var(--green-soft); color: var(--green-dark); }
+  .v-real .verdict-icon { background: var(--green); }
+  .v-maybe { background: var(--amber-soft); color: var(--amber-dark); }
+  .v-maybe .verdict-icon { background: var(--amber); }
+  .btn-big { font-size: 22px; padding: 20px; width: 100%; }
+  .btn-share-simple { background: var(--ink); color: #fff; }
+  .btn-again-simple { background: var(--violet-soft); color: var(--ink); }
+
+  /* Result: detailed */
+  #result-pro { background: var(--ink); color: #fff; gap: 16px; }
+  #result-pro .top { display: flex; justify-content: space-between; align-items: center; }
+  #result-pro .logo { font-size: 20px; }
+  .card { background: var(--ink-2); border-radius: 18px; padding: 16px; }
+  .gauge-wrap { display: flex; align-items: center; gap: 16px; }
+  .gauge { position: relative; width: 110px; height: 110px; flex-shrink: 0; }
+  .gauge svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .gauge .num { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; direction: ltr; }
+  .gauge .num b { font-size: 28px; }
+  .gauge .num span { font-size: 11px; color: #AFA9EC; }
+  .gauge-text h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .gauge-text p { font-size: 13px; color: #AFA9EC; line-height: 1.5; }
+  .card h2 { font-size: 14px; font-weight: 500; color: #AFA9EC; margin-bottom: 12px; }
+  .timeline { position: relative; height: 34px; background: #2E2870; border-radius: 8px; overflow: hidden; direction: ltr; }
+  .timeline .seg { position: absolute; top: 0; bottom: 0; background: var(--red); opacity: .85; }
+  .timeline-labels { display: flex; justify-content: space-between; font-size: 11px; color: #AFA9EC; margin-top: 6px; direction: ltr; }
+  .marks { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+  .marks div { display: flex; justify-content: space-between; gap: 8px; }
+  .marks .t { direction: ltr; color: var(--coral); font-weight: 500; }
+  .bar-row { margin-bottom: 10px; }
+  .bar-row:last-child { margin-bottom: 0; }
+  .bar-head { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
+  .bar-head .p { direction: ltr; font-weight: 500; }
+  .bar { height: 8px; background: #2E2870; border-radius: 99px; overflow: hidden; direction: ltr; }
+  .bar i { display: block; height: 100%; border-radius: 99px; }
+  .actions-pro { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn-pro { font-size: 15px; padding: 14px; }
+  .btn-share-pro { background: var(--coral); color: var(--ink); }
+  .btn-again-pro { background: transparent; color: #fff; border: 1px solid var(--violet); }
+  .disclaimer { font-size: 11px; color: #8A85C9; text-align: center; line-height: 1.5; }
+  .badge-live { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 999px; background: var(--green-soft); color: var(--green-dark); margin-top: 6px; }
+  .badge-demo { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 999px; background: var(--amber-soft); color: var(--amber-dark); margin-top: 6px; }
+
+  .toast {
+    position: absolute;
+    bottom: 28px;
+    left: 24px;
+    right: 24px;
+    background: #111;
+    color: #fff;
+    border-radius: 14px;
+    padding: 14px;
+    text-align: center;
+    font-size: 16px;
+    opacity: 0;
+    transition: opacity .2s;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- Screen 0: language (always in English) -->
+  <section class="screen active" id="lang">
+    <div class="logo">
+      <svg class="bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
+      <span><span class="fake">Fake</span><span class="break">Break</span></span>
+    </div>
+    <h1>Choose your language</h1>
+    <p class="hint">Which language would you like to use?</p>
+    <button class="lang-btn" onclick="setLang('he')"><bdi>עברית</bdi><span>Hebrew</span></button>
+    <button class="lang-btn" onclick="setLang('en')"><bdi>English</bdi><span>English</span></button>
+    <button class="lang-btn" onclick="setLang('ar')"><bdi>العربية</bdi><span>Arabic</span></button>
+    <button class="lang-btn" onclick="setLang('ru')"><bdi>Русский</bdi><span>Russian</span></button>
+    <p class="note">More languages coming soon</p>
+  </section>
+
+  <!-- Screen 1: welcome -->
+  <section class="screen" id="welcome">
+    <div class="hero">
+      <div class="logo">
+        <svg class="bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
+        <span><span class="fake">Fake</span><span class="break">Break</span></span>
+      </div>
+      <p class="tagline" data-t="welcome.tagline"></p>
+      <p class="sub" data-t="welcome.sub"></p>
+    </div>
+    <button class="btn btn-primary" onclick="go('age')" data-t="welcome.start"></button>
+  </section>
+
+  <!-- Screen 2: age / level choice -->
+  <section class="screen" id="age">
+    <h1 data-t="age.title"></h1>
+    <p class="hint" data-t="age.hint"></p>
+
+    <button class="choice" onclick="setMode('pro')">
+      <span class="age-num" data-t="age.u40"></span>
+      <span class="what"><b data-t="age.detailed"></b><span data-t="age.u40d"></span></span>
+    </button>
+    <button class="choice" onclick="setMode('pro')">
+      <span class="age-num" dir="ltr">40–60</span>
+      <span class="what"><b data-t="age.detailed"></b><span data-t="age.midd"></span></span>
+    </button>
+    <button class="choice" onclick="setMode('simple')">
+      <span class="age-num" dir="ltr">60+</span>
+      <span class="what"><b data-t="age.simple"></b><span data-t="age.o60d"></span></span>
+    </button>
+
+    <p class="note" data-t="age.note"></p>
+  </section>
+
+  <!-- Screen 3a: home, simple mode -->
+  <section class="screen" id="home-simple">
+    <div class="top">
+      <div class="logo"><span><span class="fake">Fake</span><span class="break">Break</span></span></div>
+      <button class="switch" onclick="setMode('pro')" data-t="sw.pro"></button>
+    </div>
+    <h1 data-t="home.simpleTitle"></h1>
+    <div class="drop-simple" onclick="pickFile()">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+      <span data-t="home.drop"></span>
+    </div>
+    <button class="btn btn-text-simple" onclick="openText()" data-t="home.textBtn"></button>
+  </section>
+
+  <!-- Screen 3b: home, detailed mode -->
+  <section class="screen" id="home-pro">
+    <div class="top">
+      <div class="logo">
+        <svg class="bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
+        <span><span class="fake">Fake</span><span class="break">Break</span></span>
+      </div>
+      <button class="switch" onclick="setMode('simple')" data-t="sw.simple"></button>
+    </div>
+    <h1 data-t="home.proTitle"></h1>
+    <div class="scan-options">
+      <button class="drop-pro" onclick="pickFile()">
+        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"/><circle cx="12" cy="12" r="3"/></svg>
+        <div class="big" data-t="home.upload"></div>
+        <div class="small" data-t="home.uploadSub"></div>
+      </button>
+      <button class="drop-pro" onclick="openText()">
+        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+        <div class="big" data-t="home.text"></div>
+        <div class="small" data-t="home.textSub"></div>
+      </button>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="n">12</div><div class="l" data-t="stat.scans"></div></div>
+      <div class="stat"><div class="n">5</div><div class="l" data-t="stat.busted"></div></div>
+      <div class="stat"><div class="n" dir="ltr">2/3</div><div class="l" data-t="stat.video"></div></div>
+    </div>
+    <div class="recent">
+      <h2 data-t="home.demos"></h2>
+      <div class="row" onclick="startDemo('video')"><span data-t="d.video.file"></span><span class="pill bad">AI 88%</span></div>
+      <div class="row" onclick="startDemo('voice')"><span data-t="d.voice.file"></span><span class="pill bad">AI 94%</span></div>
+      <div class="row" onclick="startDemo('image')"><span data-t="d.image.file"></span><span class="pill ok">Real 91%</span></div>
+      <div class="row" onclick="startDemo('unsure')"><span data-t="d.unsure.file"></span><span class="pill maybe">AI 55%</span></div>
+    </div>
+  </section>
+
+  <!-- Screen: text check -->
+  <section class="screen" id="text">
+    <div class="top">
+      <div class="logo"><span><span class="fake">Fake</span><span class="break">Break</span></span></div>
+      <button class="switch" onclick="goHome()" data-t="text.back"></button>
+    </div>
+    <h1 id="text-title"></h1>
+    <p class="hint" id="text-hint"></p>
+    <textarea id="text-input" dir="auto" data-t-ph="text.placeholder"></textarea>
+    <p class="err" id="text-err"></p>
+    <button class="btn btn-primary" onclick="checkText()" data-t="text.check"></button>
+  </section>
+
+  <!-- Screen 4: scanning -->
+  <section class="screen" id="scan">
+    <div class="spinner"></div>
+    <div class="title" id="scan-title"></div>
+    <div class="file" id="scan-file"></div>
+    <div class="progress" id="scan-progress"></div>
+    <ul class="steps" id="scan-steps"></ul>
+  </section>
+
+  <!-- Screen 5a: result, simple mode -->
+  <section class="screen" id="result-simple">
+    <div class="top">
+      <div class="logo"><span><span class="fake">Fake</span><span class="break">Break</span></span></div>
+      <button class="switch" onclick="setMode('pro', true)" data-t="sw.pro"></button>
+    </div>
+    <div class="verdict-card" id="rs-card">
+      <div class="verdict-icon" id="rs-icon"></div>
+      <div class="verdict-title" id="rs-title"></div>
+      <div class="verdict-line" id="rs-line"></div>
+    </div>
+    <button class="btn btn-big btn-share-simple" onclick="share()" id="rs-share"></button>
+    <button class="btn btn-big btn-again-simple" onclick="goHome()" data-t="rs.again"></button>
+  </section>
+
+  <!-- Screen 5b: result, detailed mode -->
+  <section class="screen" id="result-pro">
+    <div class="top">
+      <div class="logo">
+        <svg class="bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
+        <span><span class="fake">Fake</span><span class="break">Break</span></span>
+      </div>
+      <button class="switch" onclick="setMode('simple', true)" data-t="sw.simple"></button>
+    </div>
+
+    <div class="card gauge-wrap">
+      <div class="gauge">
+        <svg viewBox="0 0 36 36">
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#2E2870" stroke-width="3.2"/>
+          <circle id="rp-ring" cx="18" cy="18" r="15.9" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-dasharray="0 100"/>
+        </svg>
+        <div class="num"><b id="rp-pct"></b><span>AI</span></div>
+      </div>
+      <div class="gauge-text">
+        <h1 id="rp-title"></h1>
+        <p id="rp-sub"></p>
+        <span id="rp-badge"></span>
+      </div>
+    </div>
+
+    <div class="card" id="rp-timeline-card">
+      <h2 data-t="rp.where"></h2>
+      <div class="timeline" id="rp-timeline"></div>
+      <div class="timeline-labels"><span>0:00</span><span id="rp-duration"></span></div>
+      <div class="marks" id="rp-marks"></div>
+    </div>
+
+    <div class="card">
+      <h2 id="rp-bars-title"></h2>
+      <div id="rp-bars"></div>
+    </div>
+
+    <div class="actions-pro">
+      <button class="btn btn-pro btn-share-pro" onclick="share()" data-t="rp.share"></button>
+      <button class="btn btn-pro btn-again-pro" onclick="goHome()" data-t="rp.again"></button>
+    </div>
+    <p class="disclaimer" data-t="rp.disclaimer"></p>
+  </section>
+
+  <input type="file" id="file-input" accept="image/*,video/*" hidden>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+  // ---------- Translations: [Hebrew, English, Arabic, Russian] ----------
+
+  const LANGS = ['he', 'en', 'ar', 'ru'];
+  const RTL = ['he', 'ar'];
+  const S = {
+    'welcome.tagline': ['שוברים כל זיוף', 'Break every fake', 'نكشف كل تزييف', 'Разоблачаем любую подделку'],
+    'welcome.sub': ['בודקים כל סרטון, תמונה או טקסט, ומגלים אם הם אמיתיים או נוצרו בבינה מלאכותית.', "Check any video, photo or text and find out if it's real or made with AI.", 'افحص أي فيديو أو صورة أو نص واكتشف إن كان حقيقيًا أو مصنوعًا بالذكاء الاصطناعي.', 'Проверяйте любое видео, фото или текст и узнавайте, настоящее ли это или сделано ИИ.'],
+    'welcome.start': ['בואו נתחיל', "Let's start", 'لنبدأ', 'Начать'],
+
+    'age.title': ['מה הגיל שלך?', 'How old are you?', 'كم عمرك؟', 'Сколько вам лет?'],
+    'age.hint': ['כך נתאים לך את התצוגה. בחר את מה שהכי מתאים לך.', "We'll tailor the display to you. Pick what suits you best.", 'سنلائم طريقة العرض لك. اختر ما يناسبك.', 'Мы подстроим экран под вас. Выберите, что вам подходит.'],
+    'age.u40': ['עד 40', 'Under 40', 'حتى 40', 'До 40'],
+    'age.detailed': ['מפורט', 'Detailed', 'مفصّل', 'Подробно'],
+    'age.u40d': ['אחוזים, גרפים וניתוח מלא', 'Percentages, charts and full analysis', 'نسب ورسوم بيانية وتحليل كامل', 'Проценты, графики и полный анализ'],
+    'age.midd': ['כל הנתונים, בתצוגה נוחה', 'All the data, easy to read', 'كل البيانات بعرض مريح', 'Все данные в удобном виде'],
+    'age.simple': ['פשוט וברור', 'Simple and clear', 'بسيط وواضح', 'Просто и понятно'],
+    'age.o60d': ['רק תשובה: אמיתי או מזויף', 'Just the answer: real or fake', 'الجواب فقط: حقيقي أم مزيف', 'Только ответ: правда или подделка'],
+    'age.note': ['אפשר להחליף תצוגה בכל רגע', 'You can switch views anytime', 'يمكنك تغيير العرض في أي وقت', 'Вид можно сменить в любой момент'],
+
+    'sw.pro': ['תצוגה מפורטת', 'Detailed view', 'عرض مفصّل', 'Подробный вид'],
+    'sw.simple': ['תצוגה פשוטה', 'Simple view', 'عرض بسيط', 'Простой вид'],
+    'home.simpleTitle': ['מה תרצה לבדוק?', 'What do you want to check?', 'ماذا تريد أن تفحص؟', 'Что хотите проверить?'],
+    'home.drop': ['לחץ כאן כדי לבחור סרטון או תמונה', 'Tap here to choose a video or photo', 'اضغط هنا لاختيار فيديو أو صورة', 'Нажмите, чтобы выбрать видео или фото'],
+    'home.textBtn': ['בדיקת הודעה או טקסט', 'Check a message or text', 'فحص رسالة أو نص', 'Проверить сообщение или текст'],
+    'home.proTitle': ['סריקה חדשה', 'New scan', 'فحص جديد', 'Новая проверка'],
+    'home.upload': ['העלה קובץ', 'Upload file', 'رفع ملف', 'Загрузить файл'],
+    'home.uploadSub': ['וידאו · תמונה', 'Video · Photo', 'فيديو · صورة', 'Видео · Фото'],
+    'home.text': ['טקסט', 'Text', 'نص', 'Текст'],
+    'home.textSub': ['הודעה · כתבה', 'Message · Article', 'رسالة · مقال', 'Сообщение · Статья'],
+    'stat.scans': ['סריקות', 'Scans', 'عمليات فحص', 'Проверок'],
+    'stat.busted': ['זיופים נשברו', 'Fakes busted', 'تزييفات مكشوفة', 'Подделок найдено'],
+    'stat.video': ['וידאו היום', 'Videos today', 'فيديو اليوم', 'Видео сегодня'],
+    'home.demos': ['דוגמאות מוכנות להדגמה', 'Ready-made demo examples', 'أمثلة جاهزة للعرض', 'Готовые примеры для демонстрации'],
+
+    'text.back': ['חזרה', 'Back', 'رجوع', 'Назад'],
+    'text.titleSimple': ['מה כתוב בהודעה?', 'What does the message say?', 'ماذا تقول الرسالة؟', 'Что написано в сообщении?'],
+    'text.titlePro': ['בדיקת טקסט', 'Text check', 'فحص النص', 'Проверка текста'],
+    'text.hintSimple': ['הדבק כאן הודעה שקיבלת, ונבדוק אם מחשב כתב אותה.', "Paste a message you got, and we'll check if a computer wrote it.", 'الصق هنا رسالة وصلتك وسنفحص إن كان حاسوب قد كتبها.', 'Вставьте полученное сообщение, и мы проверим, не написал ли его компьютер.'],
+    'text.hintPro': ['הדבק הודעה, פוסט או כתבה. הבדיקה מדויקת יותר באנגלית ובטקסט ארוך.', 'Paste a message, post or article. Works best on longer English text.', 'الصق رسالة أو منشورًا أو مقالًا. الفحص أدق مع النصوص الإنجليزية الطويلة.', 'Вставьте сообщение, пост или статью. Точнее всего для длинных текстов на английском.'],
+    'text.placeholder': ['הדבק או כתוב כאן את הטקסט', 'Paste or type the text here', 'الصق النص أو اكتبه هنا', 'Вставьте или введите текст'],
+    'text.check': ['בדוק', 'Check', 'افحص', 'Проверить'],
+    'text.short': ['כתוב לפחות 15 מילים כדי שנוכל לבדוק.', 'Enter at least 15 words so we can check.', 'اكتب 15 كلمة على الأقل لنتمكن من الفحص.', 'Введите хотя бы 15 слов для проверки.'],
+    'text.name': ['טקסט', 'Text', 'نص', 'Текст'],
+
+    'scan.simple': ['בודק... רגע אחד', 'Checking... one moment', 'جارٍ الفحص... لحظة', 'Проверяем... секунду'],
+    'scan.pro': ['סורק', 'Scanning', 'جارٍ الفحص', 'Сканирование'],
+    'scan.download': ['מוריד את מנוע הזיהוי (רק בפעם הראשונה) {p}%', 'Downloading the detection engine (first time only) {p}%', 'جارٍ تنزيل محرك الكشف (للمرة الأولى فقط) {p}%', 'Загружаем движок проверки (только в первый раз) {p}%'],
+    'scan.preparing': ['מכין את המנוע...', 'Preparing the engine...', 'جارٍ تجهيز المحرك...', 'Готовим движок...'],
+    'scan.connecting': ['מתחבר למנוע הזיהוי...', 'Connecting to the detection engine...', 'جارٍ الاتصال بمحرك الكشف...', 'Подключаемся к движку...'],
+    'scan.video': ['מכין את הסרטון...', 'Preparing the video...', 'جارٍ تجهيز الفيديو...', 'Готовим видео...'],
+    'scan.frame': ['בודק פריים {i} מתוך {n}', 'Checking frame {i} of {n}', 'فحص الإطار {i} من {n}', 'Кадр {i} из {n}'],
+    'scan.text': ['מנתח את סגנון הכתיבה...', 'Analyzing the writing style...', 'جارٍ تحليل أسلوب الكتابة...', 'Анализируем стиль письма...'],
+    'step.1': ['מעלה את הקובץ', 'Uploading file', 'رفع الملف', 'Загрузка файла'],
+    'step.2': ['מנתח פנים', 'Analyzing faces', 'تحليل الوجوه', 'Анализ лиц'],
+    'step.3': ['מנתח קול', 'Analyzing voice', 'تحليل الصوت', 'Анализ голоса'],
+    'step.4': ['מחפש עקבות AI', 'Looking for AI traces', 'البحث عن آثار الذكاء الاصطناعي', 'Поиск следов ИИ'],
+
+    'v.simple.fake': ['זהירות! מזויף', 'Warning! Fake', 'تحذير! مزيف', 'Осторожно! Подделка'],
+    'v.simple.real': ['נראה אמיתי', 'Looks real', 'يبدو حقيقيًا', 'Похоже на правду'],
+    'v.simple.maybe': ['לא בטוח', 'Not sure', 'غير متأكد', 'Не уверены'],
+    'v.pro.fake': ['כנראה נוצר ב-AI', 'Likely made with AI', 'على الأرجح مصنوع بالذكاء الاصطناعي', 'Вероятно, создано ИИ'],
+    'v.pro.real': ['נראה אמיתי', 'Looks real', 'يبدو حقيقيًا', 'Похоже на правду'],
+    'v.pro.maybe': ['לא חד משמעי', 'Inconclusive', 'غير حاسم', 'Неоднозначно'],
+    'line.image.fake': ['התמונה הזאת כנראה נוצרה על ידי מחשב (AI). אל תאמין לה ואל תעביר אותה הלאה.', "This photo was likely made by a computer (AI). Don't trust it or pass it on.", 'هذه الصورة على الأرجح من صنع حاسوب (ذكاء اصطناعي). لا تصدقها ولا تعيد إرسالها.', 'Это фото, вероятно, создано компьютером (ИИ). Не верьте ему и не пересылайте.'],
+    'line.image.real': ['לא מצאנו סימנים לכך שהתמונה הזאת נוצרה על ידי מחשב.', 'We found no signs this photo was made by a computer.', 'لم نجد علامات على أن هذه الصورة من صنع حاسوب.', 'Мы не нашли признаков того, что фото создано компьютером.'],
+    'line.video.fake': ['הסרטון הזה כנראה נוצר על ידי מחשב (AI). אל תאמין לו ואל תעביר אותו הלאה.', "This video was likely made by a computer (AI). Don't trust it or pass it on.", 'هذا الفيديو على الأرجح من صنع حاسوب (ذكاء اصطناعي). لا تصدقه ولا تعيد إرساله.', 'Это видео, вероятно, создано компьютером (ИИ). Не верьте ему и не пересылайте.'],
+    'line.video.real': ['לא מצאנו סימנים לכך שהסרטון הזה נוצר על ידי מחשב.', 'We found no signs this video was made by a computer.', 'لم نجد علامات على أن هذا الفيديو من صنع حاسوب.', 'Мы не нашли признаков того, что видео создано компьютером.'],
+    'line.text.fake': ['הטקסט הזה כנראה נכתב על ידי מחשב (AI). אל תאמין לו ואל תעביר אותו הלאה.', "This text was likely written by a computer (AI). Don't trust it or pass it on.", 'هذا النص على الأرجح كتبه حاسوب (ذكاء اصطناعي). لا تصدقه ولا تعيد إرساله.', 'Этот текст, вероятно, написал компьютер (ИИ). Не верьте ему и не пересылайте.'],
+    'line.text.real': ['לא מצאנו סימנים לכך שהטקסט הזה נכתב על ידי מחשב.', 'We found no signs this text was written by a computer.', 'لم نجد علامات على أن هذا النص كتبه حاسوب.', 'Мы не нашли признаков того, что текст написал компьютер.'],
+    'line.maybe': ['יש סימנים חשודים. אל תסמוך על זה עד שתבדוק במקור נוסף.', "There are suspicious signs. Don't rely on it until you check another source.", 'هناك علامات مريبة. لا تعتمد عليه حتى تتحقق من مصدر آخر.', 'Есть подозрительные признаки. Не доверяйте, пока не проверите в другом источнике.'],
+    'sub.live': ['נבדק במנוע זיהוי שרץ במכשיר שלך. הקובץ לא נשלח לשום מקום.', 'Checked by a detection engine running on your device. The file never leaves it.', 'تم الفحص بمحرك يعمل على جهازك. الملف لا يُرسل إلى أي مكان.', 'Проверено движком на вашем устройстве. Файл никуда не отправляется.'],
+    'text.nonEn.line': ['עדיין קשה לנו לבדוק טקסט בשפה הזאת. אל תסמוך על התוצאה הזאת.', "We can't reliably check text in this language yet. Don't rely on this result.", 'لا يمكننا بعد فحص النصوص بهذه اللغة بدقة. لا تعتمد على هذه النتيجة.', 'Мы пока не умеем надёжно проверять текст на этом языке. Не полагайтесь на результат.'],
+    'text.nonEn.sub': ['המנוע אומן על אנגלית, ולכן בשפות אחרות התוצאה לא אמינה. נשפר את זה בהמשך.', "The engine was trained on English, so results in other languages aren't reliable yet.", 'تم تدريب المحرك على الإنجليزية، لذا النتائج بلغات أخرى غير موثوقة بعد.', 'Движок обучен на английском, поэтому для других языков результат пока ненадёжен.'],
+
+    'bar.imgAi': ['סימני יצירה ב-AI', 'Signs of AI generation', 'علامات توليد بالذكاء الاصطناعي', 'Признаки генерации ИИ'],
+    'bar.imgReal': ['סימנים לצילום אמיתי', 'Signs of a real photo', 'علامات صورة حقيقية', 'Признаки настоящего фото'],
+    'bar.txtAi': ['סגנון כתיבה של AI', 'AI writing style', 'أسلوب كتابة آلي', 'Стиль письма ИИ'],
+    'bar.txtHuman': ['סגנון כתיבה אנושי', 'Human writing style', 'أسلوب كتابة بشري', 'Человеческий стиль'],
+    'bar.frame': ['פריים בשנייה {t}', 'Frame at {t}', 'الإطار عند {t}', 'Кадр {t}'],
+    'mark.frame': ['סימני AI בפריים ({p}%)', 'AI signs in frame ({p}%)', 'علامات ذكاء اصطناعي في الإطار ({p}%)', 'Признаки ИИ в кадре ({p}%)'],
+
+    'rs.shareReal': ['שתף עם המשפחה', 'Share with family', 'شارك مع العائلة', 'Поделиться с семьёй'],
+    'rs.shareWarn': ['שלח אזהרה למשפחה', 'Warn your family', 'أرسل تحذيرًا للعائلة', 'Предупредить семью'],
+    'rs.again': ['לבדוק משהו אחר', 'Check something else', 'افحص شيئًا آخر', 'Проверить другое'],
+    'rp.where': ['איפה זוהה הזיוף', 'Where the fake was found', 'أين تم كشف التزييف', 'Где найдена подделка'],
+    'rp.none': ['לא נמצאו קטעים חשודים', 'No suspicious parts found', 'لم يتم العثور على أجزاء مريبة', 'Подозрительных фрагментов нет'],
+    'rp.details': ['פירוט הבדיקה', 'Check details', 'تفاصيل الفحص', 'Детали проверки'],
+    'rp.frames': ['ציון AI לכל פריים', 'AI score per frame', 'نسبة الذكاء الاصطناعي لكل إطار', 'Оценка ИИ по кадрам'],
+    'rp.share': ['שתף תוצאה', 'Share result', 'شارك النتيجة', 'Поделиться'],
+    'rp.again': ['סריקה חדשה', 'New scan', 'فحص جديد', 'Новая проверка'],
+    'rp.disclaimer': ['התוצאה היא הערכה של מערכת AI ואינה ודאית ב-100%.', "This result is an AI estimate and isn't 100% certain.", 'هذه النتيجة تقدير من نظام ذكاء اصطناعي وليست مؤكدة 100%.', 'Результат — оценка ИИ и не гарантирован на 100%.'],
+    'badge.live': ['בדיקה אמיתית', 'Live check', 'فحص حقيقي', 'Реальная проверка'],
+    'badge.demo': ['דוגמה מוכנה', 'Demo example', 'مثال جاهز', 'Демо-пример'],
+    'toast.share': ['בגרסה המלאה: תמונת תוצאה תישלח בוואטסאפ', 'In the full version, a result image is sent on WhatsApp', 'في النسخة الكاملة ستُرسل صورة النتيجة عبر واتساب', 'В полной версии картинка с результатом уйдёт в WhatsApp'],
+    'toast.errFile': ['משהו השתבש בבדיקה. נסה שוב או נסה קובץ אחר.', 'Something went wrong. Try again or try another file.', 'حدث خطأ ما. حاول مرة أخرى أو جرّب ملفًا آخر.', 'Что-то пошло не так. Попробуйте ещё раз или другой файл.'],
+    'toast.errText': ['משהו השתבש בבדיקה. נסה שוב.', 'Something went wrong. Try again.', 'حدث خطأ ما. حاول مرة أخرى.', 'Что-то пошло не так. Попробуйте ещё раз.'],
+
+    // Demo examples
+    'd.video.file': ['סרטון מוואטסאפ', 'WhatsApp video', 'فيديو من واتساب', 'Видео из WhatsApp'],
+    'd.video.pt': ['כמעט בטוח מזויף', 'Almost certainly fake', 'شبه مؤكد أنه مزيف', 'Почти наверняка подделка'],
+    'd.video.ps': ['זוהו סימנים חזקים להחלפת פנים (Deepfake) ולשיבוט קול.', 'Strong signs of face swapping (deepfake) and voice cloning.', 'علامات قوية على تبديل الوجه (ديب فيك) واستنساخ الصوت.', 'Явные признаки подмены лица (дипфейк) и клонирования голоса.'],
+    'd.video.m1': ['הפנים לא תואמות את תנועת הראש', "The face doesn't match the head movement", 'الوجه لا يتطابق مع حركة الرأس', 'Лицо не совпадает с движением головы'],
+    'd.video.m2': ['הקול לא מסונכרן עם השפתיים', "The voice isn't synced with the lips", 'الصوت غير متزامن مع الشفاه', 'Голос не совпадает с губами'],
+    'd.voice.file': ['הקלטה קולית', 'Voice recording', 'تسجيل صوتي', 'Голосовая запись'],
+    'd.voice.st': ['זהירות! קול מזויף', 'Warning! Fake voice', 'تحذير! صوت مزيف', 'Осторожно! Поддельный голос'],
+    'd.voice.sl': ['הקול הזה נוצר על ידי מחשב. אם מבקשים ממך כסף, אל תעביר. התקשר קודם לבן המשפחה.', "This voice was made by a computer. If you're asked for money, don't send it. Call your family member first.", 'هذا الصوت من صنع حاسوب. إذا طُلب منك مال فلا ترسله. اتصل بفرد العائلة أولًا.', 'Этот голос создан компьютером. Если просят деньги — не переводите. Сначала позвоните родственнику.'],
+    'd.voice.pt': ['קול משובט', 'Cloned voice', 'صوت مستنسخ', 'Клонированный голос'],
+    'd.voice.ps': ['הקול נוצר בטכנולוגיית שיבוט קול (Voice Cloning).', 'The voice was made with voice-cloning technology.', 'تم إنشاء الصوت بتقنية استنساخ الصوت.', 'Голос создан технологией клонирования.'],
+    'd.voice.m1': ['נשימות חסרות בין משפטים', 'No breathing between sentences', 'لا توجد أنفاس بين الجمل', 'Нет дыхания между фразами'],
+    'd.voice.m2': ['גובה צליל אחיד מדי, לא טבעי', 'Unnaturally even pitch', 'نبرة متساوية بشكل غير طبيعي', 'Неестественно ровный тон'],
+    'd.image.file': ['תמונה מאינסטגרם', 'Instagram photo', 'صورة من إنستغرام', 'Фото из Instagram'],
+    'd.image.ps': ['לא נמצאו סימנים ליצירה או עריכה ב-AI.', 'No signs of AI generation or editing.', 'لا توجد علامات توليد أو تعديل بالذكاء الاصطناعي.', 'Нет признаков генерации или редактирования ИИ.'],
+    'd.unsure.file': ['סרטון מטיקטוק', 'TikTok video', 'فيديو من تيك توك', 'Видео из TikTok'],
+    'd.unsure.ps': ['חלק מהסימנים מצביעים על AI, אבל הסרטון דחוס ואיכותו נמוכה.', 'Some signs point to AI, but the video is compressed and low quality.', 'بعض العلامات تشير إلى الذكاء الاصطناعي، لكن الفيديو مضغوط ومنخفض الجودة.', 'Некоторые признаки указывают на ИИ, но видео сжато и низкого качества.'],
+    'd.unsure.m1': ['עיוות קל סביב הפה', 'Slight distortion around the mouth', 'تشوه طفيف حول الفم', 'Лёгкое искажение у рта'],
+    'd.face': ['זיהוי פנים', 'Face analysis', 'تحليل الوجه', 'Анализ лица'],
+    'd.clone': ['שיבוט קול', 'Voice cloning', 'استنساخ الصوت', 'Клонирование голоса'],
+    'd.lips': ['סנכרון שפתיים', 'Lip sync', 'تزامن الشفاه', 'Синхронизация губ'],
+    'd.bg': ['רקע ותאורה', 'Background and lighting', 'الخلفية والإضاءة', 'Фон и освещение'],
+    'd.noise': ['רעשי רקע מלאכותיים', 'Artificial background noise', 'ضوضاء خلفية مصطنعة', 'Искусственный фоновый шум'],
+    'd.rhythm': ['קצב דיבור', 'Speech rhythm', 'إيقاع الكلام', 'Ритм речи'],
+    'd.gen': ['יצירה ב-AI', 'AI generation', 'توليد بالذكاء الاصطناعي', 'Генерация ИИ'],
+    'd.faceEdit': ['עריכת פנים', 'Face editing', 'تعديل الوجه', 'Редактирование лица'],
+    'd.light': ['תאורה וצללים', 'Light and shadows', 'الإضاءة والظلال', 'Свет и тени'],
+    'd.quality': ['איכות הסרטון', 'Video quality', 'جودة الفيديو', 'Качество видео']
+  };
+
+  let lang = 'en';
+  function t(key, vars = {}) {
+    const entry = S[key];
+    let s = entry ? entry[LANGS.indexOf(lang)] : key;
+    for (const [k, v] of Object.entries(vars)) s = s.replace('{' + k + '}', v);
+    return s;
+  }
+
+  function setLang(l) {
+    lang = l;
+    document.documentElement.lang = l;
+    document.documentElement.dir = RTL.includes(l) ? 'rtl' : 'ltr';
+    document.querySelectorAll('[data-t]').forEach(el => { el.textContent = t(el.dataset.t); });
+    document.querySelectorAll('[data-t-ph]').forEach(el => { el.placeholder = t(el.dataset.tPh); });
+    go('welcome');
+  }
+
+  // Prepared results for the demo rows (text is looked up by key). Real uploads go through the engine below.
+  const DEMOS = {
+    video: { kind: 'video', verdict: 'fake', pct: 88, file: 'd.video.file', pt: 'd.video.pt', ps: 'd.video.ps',
+      total: 24, segments: [[7, 11], [15, 19]], marks: [[7, 'd.video.m1'], [15, 'd.video.m2']],
+      bars: [['d.face', 92], ['d.clone', 81], ['d.lips', 76], ['d.bg', 34]] },
+    voice: { kind: 'voice', verdict: 'fake', pct: 94, file: 'd.voice.file', st: 'd.voice.st', sl: 'd.voice.sl', pt: 'd.voice.pt', ps: 'd.voice.ps',
+      total: 42, segments: [[0, 42]], marks: [[3, 'd.voice.m1'], [18, 'd.voice.m2']],
+      bars: [['d.clone', 94], ['d.noise', 71], ['d.rhythm', 63]] },
+    image: { kind: 'image', verdict: 'real', pct: 9, file: 'd.image.file', ps: 'd.image.ps',
+      total: null, segments: [], marks: [],
+      bars: [['d.gen', 9], ['d.faceEdit', 6], ['d.light', 12]] },
+    unsure: { kind: 'video', verdict: 'maybe', pct: 55, file: 'd.unsure.file', ps: 'd.unsure.ps',
+      total: 31, segments: [[12, 16]], marks: [[12, 'd.unsure.m1']],
+      bars: [['d.face', 58], ['d.lips', 52], ['d.quality', 28]] }
+  };
+
+  function demoResult(key) {
+    const d = DEMOS[key];
+    return {
+      kind: d.kind, file: t(d.file), verdict: d.verdict, pct: d.pct, live: false,
+      simpleTitle: d.st ? t(d.st) : t('v.simple.' + d.verdict),
+      simpleLine: d.sl ? t(d.sl) : verdictLine(d.kind, d.verdict),
+      proTitle: d.pt ? t(d.pt) : t('v.pro.' + d.verdict),
+      proSub: t(d.ps),
+      total: d.total, segments: d.segments,
+      marks: d.marks.map(([s, k]) => [s, t(k)]),
+      bars: d.bars.map(([k, p]) => [t(k), p])
+    };
+  }
+
+  const ICONS = {
+    fake: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    real: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+    maybe: '<svg viewBox="0 0 24 24"><path d="M9 9a3 3 0 1 1 4 2.8c-.6.3-1 .9-1 1.6V14"/><path d="M12 18h.01"/></svg>'
+  };
+  const COLORS = { fake: '#E24B4A', real: '#5DCAA5', maybe: '#EF9F27' };
+
+  let mode = 'pro';
+  let current = null;
+
+  function go(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+  function goHome() { go(mode === 'simple' ? 'home-simple' : 'home-pro'); }
+
+  // Switch display level. If we're on a result, stay on the result in the new mode.
+  function setMode(m, onResult) {
+    mode = m;
+    if (onResult && current) showResult(current);
+    else goHome();
+  }
+
+  // ---------- Detection engine (runs fully in the browser, files never leave the device) ----------
+
+  const TRANSFORMERS_URL = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1';
+  const ORT_URL = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.bundle.min.mjs';
+  // SwinV2 AI-image detector (haywoodsloan/ai-image-detector-deploy). Output 0 = artificial, 1 = real.
+  // Transformers.js doesn't support swinv2 yet, so we run it with ONNX Runtime directly.
+  const IMAGE_MODEL_URL = 'https://huggingface.co/LPX55/detection-model-1-ONNX/resolve/main/onnx/model_quantized.onnx';
+  const IMAGE_SIZE = 256;
+  const IMAGE_MEAN = [0.485, 0.456, 0.406];
+  const IMAGE_STD = [0.229, 0.224, 0.225];
+  const TEXT_MODEL = 'onnx-community/tmr-ai-text-detector-ONNX'; // labels: human / ai
+  const VIDEO_FRAMES = 6;
+
+  let transformers = null;
+  const pipes = {};
+  let ort = null;
+  let imageSession = null;
+
+  function downloadProgress(loaded, total) {
+    setProgress(t('scan.download', { p: Math.round(loaded / total * 100) }));
+  }
+
+  async function getPipe(task, model) {
+    if (!transformers) transformers = await import(TRANSFORMERS_URL);
+    if (!pipes[model]) {
+      const files = {};
+      pipes[model] = transformers.pipeline(task, model, {
+        dtype: 'q8',
+        device: 'wasm',
+        progress_callback: p => {
+          if (p.status !== 'progress' || !p.total) return;
+          files[p.file] = [p.loaded, p.total];
+          const [loaded, total] = Object.values(files).reduce((a, [l, tot]) => [a[0] + l, a[1] + tot], [0, 0]);
+          downloadProgress(loaded, total);
+        }
+      }).catch(e => { delete pipes[model]; throw e; });
+    }
+    return pipes[model];
+  }
+
+  // Download a model file once, showing progress, and keep it in the browser cache for next time.
+  async function fetchModel(url) {
+    const cache = await caches.open('fakebreak-models');
+    const hit = await cache.match(url);
+    if (hit) return hit.arrayBuffer();
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('model download failed');
+    const total = +res.headers.get('content-length') || 0;
+    const reader = res.body.getReader();
+    const chunks = [];
+    let loaded = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      loaded += value.length;
+      if (total) downloadProgress(loaded, total);
+    }
+    const blob = new Blob(chunks);
+    try { await cache.put(url, new Response(blob)); } catch (e) { /* storage full: just skip caching */ }
+    return blob.arrayBuffer();
+  }
+
+  async function getImageSession() {
+    if (!imageSession) {
+      imageSession = (async () => {
+        if (!ort) ort = await import(ORT_URL);
+        const bytes = await fetchModel(IMAGE_MODEL_URL);
+        setProgress(t('scan.preparing'));
+        return ort.InferenceSession.create(bytes, { executionProviders: ['wasm'] });
+      })().catch(e => { imageSession = null; throw e; });
+    }
+    return imageSession;
+  }
+
+  // Probability (0..1) that the input is AI-made, from a classifier's label scores.
+  function aiProb(output, aiLabel, humanLabel) {
+    const find = l => output.find(o => o.label.toLowerCase() === l);
+    const ai = find(aiLabel);
+    if (ai) return ai.score;
+    const human = find(humanLabel);
+    return human ? 1 - human.score : 0.5;
+  }
+
+  // Probability (0..1) that an image is AI-generated.
+  async function scoreImage(src) {
+    const session = await getImageSession();
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = src;
+    await img.decode();
+
+    const N = IMAGE_SIZE;
+    const canvas = document.createElement('canvas');
+    canvas.width = N;
+    canvas.height = N;
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, 0, 0, N, N);
+    const px = ctx.getImageData(0, 0, N, N).data;
+
+    const data = new Float32Array(3 * N * N);
+    for (let i = 0; i < N * N; i++) {
+      for (let c = 0; c < 3; c++) data[c * N * N + i] = (px[i * 4 + c] / 255 - IMAGE_MEAN[c]) / IMAGE_STD[c];
+    }
+    const res = await session.run({ pixel_values: new ort.Tensor('float32', data, [1, 3, N, N]) });
+    const [fake, real] = res.logits.data;
+    const m = Math.max(fake, real);
+    return Math.exp(fake - m) / (Math.exp(fake - m) + Math.exp(real - m));
+  }
+
+  // Grab evenly spaced frames from a video file as JPEG data URLs.
+  async function videoFrames(file, n) {
+    const v = document.createElement('video');
+    v.muted = true;
+    v.preload = 'auto';
+    v.src = URL.createObjectURL(file);
+    await new Promise((res, rej) => { v.onloadeddata = res; v.onerror = () => rej(new Error('video')); });
+    const canvas = document.createElement('canvas');
+    canvas.width = v.videoWidth;
+    canvas.height = v.videoHeight;
+    const ctx = canvas.getContext('2d');
+    const frames = [];
+    for (let i = 0; i < n; i++) {
+      const at = v.duration * (i + 0.5) / n;
+      v.currentTime = at;
+      await new Promise(r => { v.onseeked = r; });
+      ctx.drawImage(v, 0, 0);
+      frames.push({ t: at, url: canvas.toDataURL('image/jpeg', 0.92) });
+    }
+    URL.revokeObjectURL(v.src);
+    return { duration: v.duration, frames };
+  }
+
+  function verdictFor(pct) { return pct >= 70 ? 'fake' : pct <= 30 ? 'real' : 'maybe'; }
+  function verdictLine(kind, verdict) {
+    if (verdict === 'maybe' || kind === 'voice') return t('line.maybe');
+    return t(`line.${kind}.${verdict}`);
+  }
+
+  function buildResult(kind, fileName, pct, extra = {}) {
+    const verdict = extra.verdict || verdictFor(pct);
+    return Object.assign({
+      kind, file: fileName, verdict, pct, live: true,
+      simpleTitle: t('v.simple.' + verdict),
+      simpleLine: verdictLine(kind, verdict),
+      proTitle: t('v.pro.' + verdict),
+      proSub: t('sub.live'),
+      total: null, segments: [], marks: [], bars: []
+    }, extra);
+  }
+
+  async function analyzeFile(file) {
+    const kind = file.type.startsWith('video') ? 'video' : 'image';
+    showScanning(file.name, t(kind === 'video' ? 'scan.video' : 'scan.connecting'));
+    try {
+      if (kind === 'image') {
+        const url = URL.createObjectURL(file);
+        const p = await scoreImage(url);
+        URL.revokeObjectURL(url);
+        const pct = Math.round(p * 100);
+        showResult(buildResult('image', file.name, pct, {
+          bars: [[t('bar.imgAi'), pct], [t('bar.imgReal'), 100 - pct]]
+        }));
+        return;
+      }
+
+      const { duration, frames } = await videoFrames(file, VIDEO_FRAMES);
+      const scores = [];
+      for (let i = 0; i < frames.length; i++) {
+        setProgress(t('scan.frame', { i: i + 1, n: frames.length }));
+        scores.push(await scoreImage(frames[i].url));
+      }
+      const pct = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length * 100);
+      const half = duration / frames.length / 2;
+      const flagged = frames.map((f, i) => ({ ...f, p: Math.round(scores[i] * 100) })).filter(f => f.p >= 50);
+      showResult(buildResult('video', file.name, pct, {
+        total: duration,
+        segments: flagged.map(f => [Math.max(0, f.t - half), Math.min(duration, f.t + half)]),
+        marks: flagged.map(f => [f.t, t('mark.frame', { p: f.p })]),
+        bars: frames.map((f, i) => [t('bar.frame', { t: fmtTime(f.t) }), Math.round(scores[i] * 100)])
+      }));
+    } catch (e) {
+      console.error(e);
+      goHome();
+      toast(t('toast.errFile'));
+    }
+  }
+
+  // ---------- Text ----------
+
+  function openText() {
+    document.getElementById('text').className = 'screen ' + mode;
+    document.getElementById('text-title').textContent = t(mode === 'simple' ? 'text.titleSimple' : 'text.titlePro');
+    document.getElementById('text-hint').textContent = t(mode === 'simple' ? 'text.hintSimple' : 'text.hintPro');
+    document.getElementById('text-err').textContent = '';
+    go('text');
+  }
+
+  // The text model leans toward "AI": in our tests, casual human messages scored 73-92 and AI text 99.
+  // Map raw scores so only 97+ reads as AI (70+), under 60 reads as human (30-), and the rest as "not sure".
+  function calibrateText(raw) {
+    const lerp = (x, x0, x1, y0, y1) => y0 + (x - x0) / (x1 - x0) * (y1 - y0);
+    if (raw >= 97) return Math.round(lerp(raw, 97, 100, 70, 100));
+    if (raw >= 60) return Math.round(lerp(raw, 60, 97, 31, 69));
+    return Math.round(lerp(raw, 0, 60, 0, 30));
+  }
+
+  async function checkText() {
+    const text = document.getElementById('text-input').value.trim();
+    const err = document.getElementById('text-err');
+    if (text.split(/\s+/).length < 15) {
+      err.textContent = t('text.short');
+      return;
+    }
+    err.textContent = '';
+    showScanning(t('text.name'), t('scan.connecting'));
+    try {
+      const pipe = await getPipe('text-classification', TEXT_MODEL);
+      setProgress(t('scan.text'));
+      const out = await pipe(text, { top_k: 2 });
+      const pct = calibrateText(aiProb(out, 'ai', 'human') * 100);
+      const letters = text.match(/\p{L}/gu) || [];
+      const latin = text.match(/[a-zA-Z]/g) || [];
+      const extra = { bars: [[t('bar.txtAi'), pct], [t('bar.txtHuman'), 100 - pct]] };
+      if (latin.length / Math.max(1, letters.length) < 0.8) {
+        // The text model was trained on English, so we never give a confident verdict on other scripts.
+        extra.verdict = 'maybe';
+        extra.simpleLine = t('text.nonEn.line');
+        extra.proSub = t('text.nonEn.sub');
+      }
+      showResult(buildResult('text', t('text.name'), pct, extra));
+    } catch (e) {
+      console.error(e);
+      openText();
+      toast(t('toast.errText'));
+    }
+  }
+
+  // ---------- Screens ----------
+
+  function pickFile() {
+    const input = document.getElementById('file-input');
+    input.value = '';
+    input.onchange = () => { if (input.files[0]) analyzeFile(input.files[0]); };
+    input.click();
+  }
+
+  function showScanning(fileName, progress) {
+    document.getElementById('scan').className = 'screen ' + mode;
+    document.getElementById('scan-title').textContent = t(mode === 'simple' ? 'scan.simple' : 'scan.pro');
+    document.getElementById('scan-file').textContent = fileName;
+    document.getElementById('scan-steps').innerHTML = '';
+    setProgress(progress || '');
+    go('scan');
+  }
+  function setProgress(msg) { document.getElementById('scan-progress').textContent = msg; }
+
+  function startDemo(key) {
+    const result = demoResult(key);
+    showScanning(result.file);
+    if (mode === 'simple') {
+      setTimeout(() => showResult(result), 2200);
+      return;
+    }
+    const list = document.getElementById('scan-steps');
+    ['step.1', 'step.2', 'step.3', 'step.4'].forEach(k => { const li = document.createElement('li'); li.textContent = t(k); list.appendChild(li); });
+    const items = list.children;
+    let i = 0;
+    const tick = () => {
+      if (i > 0) items[i - 1].className = 'done';
+      if (i < items.length) { items[i].className = 'now'; i++; setTimeout(tick, 600); }
+      else setTimeout(() => showResult(result), 300);
+    };
+    tick();
+  }
+
+  function fmtTime(sec) {
+    const s = Math.round(sec);
+    return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  }
+
+  function showResult(d) {
+    current = d;
+    if (mode === 'simple') {
+      document.getElementById('rs-card').className = 'verdict-card v-' + d.verdict;
+      document.getElementById('rs-icon').innerHTML = ICONS[d.verdict];
+      document.getElementById('rs-title').textContent = d.simpleTitle;
+      document.getElementById('rs-line').textContent = d.simpleLine;
+      document.getElementById('rs-share').textContent = t(d.verdict === 'real' ? 'rs.shareReal' : 'rs.shareWarn');
+      go('result-simple');
+      return;
+    }
+
+    const ring = document.getElementById('rp-ring');
+    ring.style.transition = 'none';
+    ring.setAttribute('stroke', COLORS[d.verdict]);
+    ring.setAttribute('stroke-dasharray', '0 100');
+    document.getElementById('rp-pct').textContent = d.pct + '%';
+    document.getElementById('rp-title').textContent = d.proTitle;
+    document.getElementById('rp-title').style.color = COLORS[d.verdict];
+    document.getElementById('rp-sub').textContent = d.proSub;
+    document.getElementById('rp-badge').innerHTML = d.live
+      ? `<span class="badge-live">${t('badge.live')}</span>`
+      : `<span class="badge-demo">${t('badge.demo')}</span>`;
+
+    const tlCard = document.getElementById('rp-timeline-card');
+    tlCard.style.display = d.total ? '' : 'none';
+    if (d.total) {
+      document.getElementById('rp-timeline').innerHTML = d.segments
+        .map(([a, b]) => `<div class="seg" style="left:${a / d.total * 100}%;width:${(b - a) / d.total * 100}%"></div>`).join('');
+      document.getElementById('rp-duration').textContent = fmtTime(d.total);
+      const marks = document.getElementById('rp-marks');
+      marks.innerHTML = '';
+      if (!d.marks.length) d.marks = [[null, t('rp.none')]];
+      d.marks.forEach(([at, txt]) => {
+        const row = document.createElement('div');
+        row.innerHTML = '<span></span><span class="t"></span>';
+        row.children[0].textContent = txt;
+        row.children[1].textContent = at == null ? '' : fmtTime(at);
+        marks.appendChild(row);
+      });
+    }
+
+    document.getElementById('rp-bars-title').textContent = t(d.kind === 'video' && d.live ? 'rp.frames' : 'rp.details');
+    document.getElementById('rp-bars').innerHTML = d.bars.map(([name, p]) => {
+      const c = p >= 70 ? COLORS.fake : p >= 40 ? COLORS.maybe : COLORS.real;
+      return `<div class="bar-row"><div class="bar-head"><span>${name}</span><span class="p">${p}%</span></div>` +
+             `<div class="bar"><i style="width:${p}%;background:${c}"></i></div></div>`;
+    }).join('');
+
+    go('result-pro');
+    requestAnimationFrame(() => setTimeout(() => {
+      ring.style.transition = 'stroke-dasharray .9s ease-out';
+      ring.setAttribute('stroke-dasharray', d.pct + ' 100');
+    }, 50));
+  }
+
+  function share() {
+    toast(t('toast.share'));
+  }
+
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+  }
+</script>
+</body>
+</html>
