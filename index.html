@@ -281,6 +281,17 @@
   #rec-time { font-size: 36px; font-weight: 700; direction: ltr; }
   #rec-label { font-size: 20px; font-weight: 500; }
   #rec-err { color: var(--red); font-size: 15px; min-height: 1.2em; }
+  .clip-list { list-style: none; align-self: stretch; display: flex; flex-direction: column; gap: 8px; }
+  .clip-list li { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-radius: 12px; padding: 10px 14px; font-size: 16px; }
+  #record.simple .clip-list li { background: var(--violet-soft); color: var(--ink); }
+  #record.pro .clip-list li { background: var(--ink-2); color: #fff; }
+  .clip-list .len { direction: ltr; opacity: .7; }
+  .clip-list button { font-family: inherit; background: none; border: none; color: inherit; font-size: 16px; cursor: pointer; }
+  .clip-check { display: none; align-self: stretch; }
+  .clip-add { font-size: 16px; }
+  #record.pro .clip-add { color: #AFA9EC; }
+  .clip-hint { font-size: 13px; color: var(--muted); }
+  #record.pro .clip-hint { color: #8A85C9; }
   .drop-pro {
     border: 2px dashed var(--violet);
     border-radius: 20px;
@@ -623,6 +634,10 @@
     <div id="rec-time">0:00</div>
     <div id="rec-label"></div>
     <p id="rec-err"></p>
+    <ul class="clip-list" id="clip-list"></ul>
+    <button class="btn btn-primary clip-check" id="clip-check" onclick="checkClips()"></button>
+    <button class="link-btn clip-add" onclick="pickVoiceFile()" data-t="rec.addFile"></button>
+    <p class="clip-hint" data-t="rec.hintMore"></p>
   </section>
 
   <!-- Screen: suspicious call (big, simple, for seniors) -->
@@ -824,9 +839,19 @@
     'scan.vad': ['מחפש דיבור בהקלטה...', 'Looking for speech...', 'جارٍ البحث عن كلام...', 'Ищем речь...'],
     'bar.videoVoice': ['הקול בסרטון', 'Voice in the video', 'الصوت في الفيديو', 'Голос в видео'],
     'sub.videoVoice': ['התמונה בסרטון נראית אמיתית, אבל הקול נשמע כמו קול שנוצר ב-AI. היזהר.', 'The picture looks real, but the voice sounds AI-made. Be careful.', 'تبدو الصورة حقيقية، لكن الصوت يبدو مصنوعًا بالذكاء الاصطناعي. كن حذرًا.', 'Картинка выглядит настоящей, но голос похож на созданный ИИ. Будьте осторожны.'],
-    'sub.videoVoiceFake': ['הקול בסרטון כמעט בוודאות נוצר ב-AI (קול משובט), גם אם התמונה נראית אמיתית.', 'The voice in this video is almost certainly AI-made (a cloned voice), even if the picture looks real.', 'الصوت في هذا الفيديو مصنوع بالذكاء الاصطناعي على الأرجح الكبير (صوت مستنسخ)، حتى لو بدت الصورة حقيقية.', 'Голос в этом видео почти наверняка создан ИИ (клонированный), даже если картинка выглядит настоящей.'],
+    'sub.videoNew': ['המנועים לא מצאו סימנים ברורים, אבל מנוע 2 חושד. סרטונים של מחוללים חדשים (Veo, Sora) קשים מאוד לזיהוי, במיוחד אחרי וואטסאפ. אל תסמוך על הסרטון.', 'No clear signs, but engine 2 is suspicious. Videos from the newest generators (Veo, Sora) are very hard to detect, especially after WhatsApp. Don’t trust this video.', 'لم تجد المحركات علامات واضحة، لكن المحرك 2 يشتبه. فيديوهات المولدات الحديثة (Veo وSora) صعبة الكشف جدًا، خاصة بعد واتساب. لا تثق بهذا الفيديو.', 'Явных признаков нет, но движок 2 подозревает. Видео новейших генераторов (Veo, Sora) очень трудно распознать, особенно после WhatsApp. Не доверяйте этому видео.'],
+    'line.videoNew': ['לא הצלחנו לוודא שהסרטון אמיתי. סרטוני AI חדשים קשים מאוד לזיהוי. אל תאמין לו ואל תעביר אותו הלאה עד שתבדוק במקור אמין (אתר חדשות, הדובר הרשמי).', "We couldn't confirm this video is real. New AI videos are very hard to detect. Don't believe it or pass it on until you check a trusted source (a news site, the official spokesperson).", 'لم نتمكن من التأكد من أن الفيديو حقيقي. فيديوهات الذكاء الاصطناعي الجديدة صعبة الكشف جدًا. لا تصدقه ولا تعيد إرساله حتى تتحقق من مصدر موثوق.', 'Не удалось подтвердить, что видео настоящее. Новые ИИ-видео очень трудно распознать. Не верьте и не пересылайте, пока не проверите надёжный источник.'],
+    'sub.videoVoiceFake':['הקול בסרטון כמעט בוודאות נוצר ב-AI (קול משובט), גם אם התמונה נראית אמיתית.', 'The voice in this video is almost certainly AI-made (a cloned voice), even if the picture looks real.', 'الصوت في هذا الفيديو مصنوع بالذكاء الاصطناعي على الأرجح الكبير (صوت مستنسخ)، حتى لو بدت الصورة حقيقية.', 'Голос в этом видео почти наверняка создан ИИ (клонированный), даже если картинка выглядит настоящей.'],
     'sub.videoBoth':['גם התמונה וגם הקול בסרטון נראים כמו AI.', 'Both the picture and the voice look AI-made.', 'الصورة والصوت كلاهما يبدوان مصنوعين بالذكاء الاصطناعي.', 'И картинка, и голос похожи на созданные ИИ.'],
     'mark.videoVoice': ['קול חשוד כ-AI ({p}%)', 'Voice suspected AI ({p}%)', 'صوت يُشتبه أنه ذكاء اصطناعي ({p}%)', 'Голос похож на ИИ ({p}%)'],
+    'rec.addFile': ['📎 הוסף הודעה קולית מהטלפון (למשל מוואטסאפ)', '📎 Add a voice message from your phone (e.g. WhatsApp)', '📎 أضف رسالة صوتية من الهاتف (مثل واتساب)', '📎 Добавить голосовое с телефона (например, из WhatsApp)'],
+    'rec.check1': ['🔍 בדוק את ההקלטה', '🔍 Check the recording', '🔍 افحص التسجيل', '🔍 Проверить запись'],
+    'rec.checkAll': ['🔍 בדוק את כל ההקלטות יחד', '🔍 Check all recordings together', '🔍 افحص كل التسجيلات معًا', '🔍 Проверить все записи вместе'],
+    'rec.more': ['לחץ כדי להקליט עוד', 'Tap to record more', 'اضغط لتسجيل المزيد', 'Нажмите, чтобы записать ещё'],
+    'rec.clip': ['הקלטה {n}', 'Recording {n}', 'تسجيل {n}', 'Запись {n}'],
+    'rec.hintMore': ['יותר דיבור = תוצאה מדויקת יותר. אפשר לחבר כמה הקלטות והודעות קוליות.', 'More speech = a more accurate result. You can combine several recordings and voice messages.', 'كلام أكثر = نتيجة أدق. يمكنك دمج عدة تسجيلات ورسائل صوتية.', 'Больше речи = точнее результат. Можно объединить несколько записей и голосовых.'],
+    'rec.combined': ['הקלטות משולבות', 'Combined recordings', 'تسجيلات مدمجة', 'Объединённые записи'],
+    'rec.badFile': ['לא הצלחנו לקרוא את הקובץ הזה. נסה קובץ קול אחר.', "We couldn't read that file. Try another audio file.", 'لم نتمكن من قراءة هذا الملف. جرّب ملفًا صوتيًا آخر.', 'Не удалось прочитать файл. Попробуйте другой аудиофайл.'],
     'rec.failed':['ההקלטה לא הצליחה להתחיל. סגור אפליקציות אחרות שמשתמשות במיקרופון ונסה שוב.', "Recording couldn't start. Close other apps using the microphone and try again.", 'تعذّر بدء التسجيل. أغلق التطبيقات الأخرى التي تستخدم الميكروفون وحاول مرة أخرى.', 'Не удалось начать запись. Закройте другие приложения, использующие микрофон, и попробуйте снова.'],
     'voice.fail.decode':['לא הצלחנו לקרוא את ההקלטה.', "We couldn't read the recording.", 'لم نتمكن من قراءة التسجيل.', 'Не удалось прочитать запись.'],
     'voice.fail.short': ['ההקלטה קצרה מדי. הקלט לפחות 2 שניות של דיבור.', 'The recording is too short. Record at least 2 seconds of speech.', 'التسجيل قصير جدًا. سجّل ثانيتين على الأقل من الكلام.', 'Запись слишком короткая. Запишите хотя бы 2 секунды речи.'],
@@ -1247,7 +1272,8 @@
   // huggingface.co is blocked.
   const VAD_MODEL_URL = 'voice-model/silero_vad.onnx';
   const VAD_CHUNK = 512;              // 32 ms at 16 kHz
-  const MIN_SPEECH_SECONDS = 1.5;
+  // 1 s: short WhatsApp-style clips (Kan news snippets had 1-1.5 s of speech) were being skipped at 1.5 s.
+  const MIN_SPEECH_SECONDS = 1.0;
   const TEXT_MODEL = 'onnx-community/tmr-ai-text-detector-ONNX'; // labels: human / ai
   const VIDEO_FRAMES = 8;
 
@@ -1456,12 +1482,14 @@
     const perWin = PELLA_CROP / VAD_CHUNK;
     const speech = probs.map(p => (p > 0.5 ? 1 : 0));
     if (speech.length <= perWin) return [0];
-    const candidates = [];
+    const all = [];
     for (let c = 0; c + perWin <= speech.length; c += Math.round(perWin / 4)) {
-      const frac = speech.slice(c, c + perWin).reduce((a, b) => a + b, 0) / perWin;
-      if (frac >= 0.5) candidates.push({ start: c * VAD_CHUNK, frac });
+      all.push({ start: c * VAD_CHUNK, frac: speech.slice(c, c + perWin).reduce((a, b) => a + b, 0) / perWin });
     }
-    candidates.sort((a, b) => b.frac - a.frac);
+    all.sort((a, b) => b.frac - a.frac);
+    // Windows that are at least a third speech; if none is (slow talkers, long pauses), the most-speech window.
+    const candidates = all.filter(w => w.frac >= 0.33);
+    if (!candidates.length && all.length) candidates.push(all[0]);
     const picked = [];
     for (const cnd of candidates) {
       if (picked.length >= VOICE_WINDOWS) break;
@@ -1826,6 +1854,20 @@
       const meanPct = Math.round(perFrame.reduce((a, c) => a + c.pct, 0) / perFrame.length);
       let pct = verdict === 'fake' ? Math.max(70, meanPct) : verdict === 'maybe' ? Math.min(69, Math.max(31, meanPct)) : Math.min(30, meanPct);
       let proSub = t('sub.frames', { n: fakeFrames + maybeFrames, total: frames.length });
+
+      // The newest video generators (Veo 3, Sora 2) fool our image engines, especially after WhatsApp
+      // compression: on a user's Veo-style WhatsApp clip the main engine and Community Forensics said ~0%
+      // on all 12 frames, while the second engine sat at 24-70% (mean ~39%). Real camera videos we tested
+      // kept it at 5-13%. So a video only gets "looks real" when the second engine is also calm; otherwise
+      // "not sure", with a plain explanation. Telling someone a fake is real is the worst mistake we can make.
+      const meanSecond = scores.reduce((a, s) => a + s.second, 0) / scores.length;
+      let newGenerator = false;
+      if (verdict === 'real' && meanSecond >= 0.25) {
+        verdict = 'maybe';
+        pct = Math.max(pct, 45);
+        proSub = t('sub.videoNew');
+        newGenerator = true;
+      }
       const half = duration / frames.length / 2;
       const flagged = frames.map((f, i) => ({ ...f, c: perFrame[i] })).filter(f => f.c.verdict !== 'real');
       const segments = flagged.map(f => [Math.max(0, f.t - half), Math.min(duration, f.t + half)]);
@@ -1855,7 +1897,9 @@
       marks.sort((a, b) => a[0] - b[0]);
 
       showResult(buildResult('video', file.name, label ? 98 : Math.min(98, pct), {
-        verdict, proSub, total: duration, segments, marks, bars, ...labelled
+        verdict, proSub, total: duration, segments, marks, bars,
+        ...(newGenerator && verdict === 'maybe' ? { simpleLine: t('line.videoNew') } : {}),
+        ...labelled
       }));
     } catch (e) {
       console.error(e);
@@ -1919,7 +1963,75 @@
   let recorder = null;
   let recTimer = null;
 
+  // ---------- Collecting several clips (live recordings and voice messages) to check together ----------
+  // More speech gives a more reliable answer, and WhatsApp voice notes are often only a few seconds long.
+
+  let clips = [];
+
+  // 16-bit PCM mono WAV, so the combined audio goes through the exact same decoder as any WAV file.
+  function encodeWav(samples, rate) {
+    const buf = new ArrayBuffer(44 + samples.length * 2), v = new DataView(buf);
+    const str = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+    str(0, 'RIFF'); v.setUint32(4, 36 + samples.length * 2, true); str(8, 'WAVE');
+    str(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+    str(36, 'data'); v.setUint32(40, samples.length * 2, true);
+    for (let i = 0; i < samples.length; i++) v.setInt16(44 + i * 2, Math.max(-1, Math.min(1, samples[i])) * 32767, true);
+    return buf;
+  }
+
+  async function addClip(file, label) {
+    const err = document.getElementById('rec-err');
+    try {
+      const audio = await decodeVoice(file);
+      clips.push({ file, label, audio, seconds: audio.length / PELLA_SR });
+      err.textContent = '';
+    } catch (e) {
+      err.textContent = t('rec.badFile');
+    }
+    renderClips();
+  }
+
+  function renderClips() {
+    const list = document.getElementById('clip-list');
+    list.innerHTML = '';
+    clips.forEach((c, i) => {
+      const li = document.createElement('li');
+      li.innerHTML = '<span class="name"></span><span class="len"></span><button aria-label="Remove">✕</button>';
+      li.querySelector('.name').textContent = c.label;
+      li.querySelector('.len').textContent = fmtTime(c.seconds);
+      li.querySelector('button').onclick = () => { clips.splice(i, 1); renderClips(); };
+      list.appendChild(li);
+    });
+    const check = document.getElementById('clip-check');
+    check.style.display = clips.length ? 'block' : 'none';
+    check.textContent = t(clips.length > 1 ? 'rec.checkAll' : 'rec.check1');
+    if (!recorder) document.getElementById('rec-label').textContent = t(clips.length ? 'rec.more' : 'rec.start');
+  }
+
+  function pickVoiceFile() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'audio/*,.opus,.ogg,.m4a,.mp3,.wav,.aac';
+    input.onchange = () => { if (input.files[0]) addClip(input.files[0], '📎 ' + input.files[0].name); };
+    input.click();
+  }
+
+  function checkClips() {
+    if (!clips.length) return;
+    // A single uploaded file goes through as-is (keeps any AI label in its metadata).
+    if (clips.length === 1) return analyzeFile(clips[0].file);
+    const gap = new Float32Array(Math.round(0.3 * PELLA_SR));
+    const total = clips.reduce((a, c) => a + c.audio.length + gap.length, 0);
+    const joined = new Float32Array(total);
+    let o = 0;
+    for (const c of clips) { joined.set(c.audio, o); o += c.audio.length + gap.length; }
+    analyzeFile(new File([encodeWav(joined, PELLA_SR)], t('rec.combined') + '.wav', { type: 'audio/wav' }));
+  }
+
   function openRecord() {
+    clips = [];
+    renderClips();
     document.getElementById('record').className = 'screen ' + mode;
     document.getElementById('rec-time').textContent = '0:00';
     document.getElementById('rec-label').textContent = t('rec.start');
@@ -1950,11 +2062,13 @@
     recorder.ondataavailable = e => chunks.push(e.data);
     recorder.onstop = () => {
       stream.getTracks().forEach(tr => tr.stop());
-      if (recorder && recorder.analyze) {
-        const type = recorder.mimeType || 'audio/webm';
-        analyzeFile(new File([new Blob(chunks, { type })], t('rec.name') + '.webm', { type }));
-      }
+      const keep = recorder && recorder.analyze;
       recorder = null;
+      if (keep) {
+        // Each recording joins the list; the user checks when ready (or adds more first).
+        const type = chunks[0] && chunks[0].type || 'audio/webm';
+        addClip(new File([new Blob(chunks, { type })], t('rec.name') + '.webm', { type }), '🎙️ ' + t('rec.clip', { n: clips.length + 1 }));
+      }
     };
     try {
       recorder.start();
