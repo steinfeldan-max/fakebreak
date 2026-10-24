@@ -233,6 +233,33 @@
   #home-pro h1 { font-size: 22px; font-weight: 500; }
   .scan-options { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 8px; }
 
+  /* Investor demo bar (floats over every screen while the demo runs) */
+  .demo-bar {
+    position: absolute; top: 8px; left: 8px; right: 8px; z-index: 6; display: none; align-items: center; gap: 8px;
+    background: rgba(17, 17, 17, .88); color: #fff; border-radius: 14px; padding: 8px 10px; font-size: 13px;
+  }
+  .demo-bar.show { display: flex; }
+  .demo-step { background: var(--coral); color: var(--ink); border-radius: 999px; padding: 2px 8px; font-weight: 700; direction: ltr; }
+  .demo-label { flex: 1; line-height: 1.3; }
+  .demo-next { font-family: inherit; background: var(--coral); color: var(--ink); border: none; border-radius: 999px; padding: 6px 12px; font-weight: 500; cursor: pointer; }
+  .demo-next:disabled { opacity: .4; cursor: default; }
+  .demo-close { background: none; border: none; color: #fff; font-size: 16px; cursor: pointer; }
+
+  /* Suspicious call */
+  .btn-call { background: var(--red); color: #fff; font-size: 22px; padding: 18px; width: 100%; }
+  .btn-call-pro { font-size: 16px; padding: 12px; }
+  #call { background: #fff; color: var(--ink); align-items: center; text-align: center; gap: 14px; }
+  #call .top { align-self: stretch; display: flex; justify-content: space-between; align-items: center; }
+  #call .switch { border: 2px solid var(--violet); color: var(--ink); font-size: 16px; }
+  #call h1 { font-size: 28px; line-height: 1.3; }
+  .call-steps { text-align: start; font-size: 19px; line-height: 1.5; padding-inline-start: 26px; align-self: stretch; }
+  .call-steps li { margin-bottom: 6px; }
+  #call .call-mic { width: 170px; height: 170px; flex-shrink: 0; background: var(--red); margin-top: 6px; }
+  #call .call-mic svg { stroke: #fff; }
+  .call-count { font-size: 44px; font-weight: 700; min-height: 1.2em; direction: ltr; }
+  .call-label { font-size: 22px; font-weight: 500; }
+  .call-err { color: var(--red); font-size: 17px; min-height: 1.2em; }
+
   /* Recording */
   #record { align-items: center; text-align: center; gap: 20px; }
   #record.simple { background: #fff; color: var(--ink); }
@@ -457,6 +484,7 @@
     </div>
     <button class="install-btn" id="install-btn" onclick="installApp()" data-t="install.btn"></button>
     <button class="watch-intro" onclick="playIntro()" data-t="intro.watch"></button>
+    <button class="watch-intro" onclick="startInvestorDemo()" data-t="demo.start"></button>
     <button class="btn btn-primary" onclick="go('login')" data-t="welcome.start"></button>
   </section>
 
@@ -517,6 +545,7 @@
       <button class="switch" onclick="setMode('pro')" data-t="sw.pro"></button>
     </div>
     <h1 data-t="home.simpleTitle"></h1>
+    <button class="btn btn-call" onclick="openCall()" data-t="call.btn"></button>
     <div class="drop-simple" onclick="pickFile()">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
       <span data-t="home.drop"></span>
@@ -552,6 +581,7 @@
         <div class="small" data-t="home.recordSub"></div>
       </button>
     </div>
+    <button class="btn btn-call btn-call-pro" onclick="openCall()" data-t="call.btn"></button>
     <div class="stats">
       <div class="stat"><div class="n">12</div><div class="l" data-t="stat.scans"></div></div>
       <div class="stat"><div class="n">5</div><div class="l" data-t="stat.busted"></div></div>
@@ -593,6 +623,26 @@
     <div id="rec-time">0:00</div>
     <div id="rec-label"></div>
     <p id="rec-err"></p>
+  </section>
+
+  <!-- Screen: suspicious call (big, simple, for seniors) -->
+  <section class="screen" id="call">
+    <div class="top">
+      <div class="logo"><span><span class="fake">Fake</span><span class="break">Break</span></span></div>
+      <button class="switch" onclick="stopRecording(false); endCall(); goHome()" data-t="text.back"></button>
+    </div>
+    <h1 data-t="call.title"></h1>
+    <ol class="call-steps">
+      <li data-t="call.step1"></li>
+      <li data-t="call.step2"></li>
+      <li data-t="call.step3"></li>
+    </ol>
+    <button class="mic call-mic" id="call-btn" onclick="toggleCallRecording()" aria-label="Record call">
+      <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+    </button>
+    <div class="call-count" id="call-count"></div>
+    <div class="call-label" id="call-label"></div>
+    <p id="call-err" class="call-err"></p>
   </section>
 
   <!-- Screen 4: scanning -->
@@ -681,6 +731,12 @@
   </section>
 
   <input type="file" id="file-input" accept="image/*,video/*,audio/*,.opus,.ogg,.m4a" hidden>
+  <div class="demo-bar" id="demo-bar">
+    <span class="demo-step" id="demo-step"></span>
+    <span class="demo-label" id="demo-label"></span>
+    <button class="demo-next" id="demo-next" onclick="demoNext()" data-t="demo.next"></button>
+    <button class="demo-close" onclick="demoEnd()" aria-label="Close">✕</button>
+  </div>
   <div class="toast" id="toast"></div>
 </div>
 
@@ -703,7 +759,29 @@
     'web.copied': ['התמונה הועתקה. באתר שנפתח לחץ Ctrl+V כדי להדביק אותה.', 'Image copied. On the site that opened, press Ctrl+V to paste it.', 'تم نسخ الصورة. في الموقع الذي فُتح اضغط Ctrl+V للصقها.', 'Фото скопировано. На открывшемся сайте нажмите Ctrl+V, чтобы вставить.'],
     'web.upload': ['באתר שנפתח, העלה את התמונה כדי לחפש אותה.', 'On the site that opened, upload the image to search for it.', 'في الموقع الذي فُتح، ارفع الصورة للبحث عنها.', 'На открывшемся сайте загрузите фото для поиска.'],
     'web.simpleBtn': ['חפש את התמונה באינטרנט', 'Search this image online', 'ابحث عن الصورة على الإنترنت', 'Найти фото в интернете'],
-    'install.btn': ['📲 התקן את FakeBreak על מסך הבית', '📲 Install FakeBreak on your home screen', '📲 ثبّت FakeBreak على الشاشة الرئيسية', '📲 Установить FakeBreak на главный экран'],
+    'demo.start': ['🎬 מצב הדגמה למשקיעים', '🎬 Investor demo mode', '🎬 وضع العرض للمستثمرين', '🎬 Демо для инвесторов'],
+    'demo.loading': ['מכין את ההדגמה: טוען את כל המנועים...', 'Preparing the demo: loading all engines...', 'جارٍ تجهيز العرض: تحميل كل المحركات...', 'Готовим демо: загружаем все движки...'],
+    'demo.next': ['הבא ›', 'Next ›', 'التالي ›', 'Далее ›'],
+    'demo.finish': ['סיום ✓', 'Finish ✓', 'إنهاء ✓', 'Готово ✓'],
+    'demo.s1': ['תמונה שנוצרה ב-AI (Stable Diffusion)', 'AI-generated image (Stable Diffusion)', 'صورة مولّدة بالذكاء الاصطناعي (Stable Diffusion)', 'Изображение, созданное ИИ (Stable Diffusion)'],
+    'demo.s2': ['צילום אמיתי', 'A real photo', 'صورة حقيقية', 'Настоящее фото'],
+    'demo.s3': ['קול משובט ב-AI', 'An AI-cloned voice', 'صوت مستنسخ بالذكاء الاصطناعي', 'Голос, клонированный ИИ'],
+    'demo.s4': ['קול של אדם אמיתי', "A real person's voice", 'صوت شخص حقيقي', 'Голос настоящего человека'],
+    'demo.s5': ['דיפ-פייק בסרטון (דוגמה מוכנה)', 'Deepfake video (prepared example)', 'فيديو مزيف عميق (مثال جاهز)', 'Дипфейк-видео (готовый пример)'],
+    'call.btn':['📞 מתקשרים ומבקשים כסף? לחץ כאן', '📞 Someone calling and asking for money? Tap here', '📞 شخص يتصل ويطلب المال؟ اضغط هنا', '📞 Звонят и просят денег? Нажмите здесь'],
+    'call.title': ['בודקים יחד אם הקול אמיתי', "Let's check if the voice is real", 'لنتحقق معًا إن كان الصوت حقيقيًا', 'Проверим, настоящий ли голос'],
+    'call.step1': ['שים את השיחה על רמקול.', 'Put the call on speaker.', 'شغّل المكالمة على مكبر الصوت.', 'Включите громкую связь.'],
+    'call.step2': ['לחץ על הכפתור האדום וקרב את הטלפון.', 'Tap the red button and hold the phone close.', 'اضغط الزر الأحمر وقرّب الهاتف.', 'Нажмите красную кнопку и поднесите телефон ближе.'],
+    'call.step3': ['נקשיב 12 שניות ונגיד לך מה לעשות.', "We'll listen for 12 seconds and tell you what to do.", 'سنستمع 12 ثانية ونخبرك بما تفعل.', 'Мы послушаем 12 секунд и скажем, что делать.'],
+    'call.tap': ['לחץ כדי להתחיל להקשיב', 'Tap to start listening', 'اضغط لبدء الاستماع', 'Нажмите, чтобы начать слушать'],
+    'call.listening': ['מקשיב... (לחץ שוב כדי לסיים מוקדם)', 'Listening... (tap again to finish early)', 'جارٍ الاستماع... (اضغط مرة أخرى للإنهاء مبكرًا)', 'Слушаем... (нажмите ещё раз, чтобы закончить раньше)'],
+    'call.r.fake.t': ['נתק את השיחה!', 'Hang up now!', 'أغلق الخط الآن!', 'Положите трубку!'],
+    'call.r.fake.l': ['הקול כנראה מזויף (AI). אל תעביר כסף ואל תמסור פרטים. התקשר בעצמך לבן המשפחה במספר שאתה מכיר.', "The voice is likely fake (AI). Don't send money or give details. Call your family member yourself on a number you know.", 'الصوت مزيف على الأرجح (ذكاء اصطناعي). لا ترسل مالًا ولا تعطِ تفاصيل. اتصل بنفسك بفرد العائلة على رقم تعرفه.', 'Голос, вероятно, поддельный (ИИ). Не переводите деньги и не сообщайте данные. Сами позвоните родственнику на известный номер.'],
+    'call.r.maybe.t': ['היזהר!', 'Be careful!', 'كن حذرًا!', 'Осторожно!'],
+    'call.r.maybe.l': ['לא בטוח שהקול אמיתי. לפני שאתה עושה משהו, נתק והתקשר בעצמך למספר שאתה מכיר.', "We're not sure the voice is real. Before doing anything, hang up and call back on a number you know.", 'لسنا متأكدين أن الصوت حقيقي. قبل أي شيء، أغلق الخط واتصل بنفسك على رقم تعرفه.', 'Мы не уверены, что голос настоящий. Прежде чем что-то делать, положите трубку и перезвоните на известный номер.'],
+    'call.r.real.t': ['הקול נשמע אמיתי', 'The voice sounds real', 'يبدو الصوت حقيقيًا', 'Голос звучит по-настоящему'],
+    'call.r.real.l': ['אבל זכור: אם מבקשים כסף בטלפון, תמיד נתק והתקשר בעצמך כדי לוודא.', 'But remember: if someone asks for money on the phone, always hang up and call back yourself to check.', 'لكن تذكّر: إذا طلب أحد مالًا عبر الهاتف، أغلق الخط دائمًا واتصل بنفسك للتأكد.', 'Но помните: если по телефону просят деньги, всегда перезванивайте сами, чтобы проверить.'],
+    'install.btn':['📲 התקן את FakeBreak על מסך הבית', '📲 Install FakeBreak on your home screen', '📲 ثبّت FakeBreak على الشاشة الرئيسية', '📲 Установить FakeBreak на главный экран'],
     'install.ios': ['לחץ על כפתור השיתוף ⬆️ בתחתית Safari, ואז "הוסף למסך הבית".', 'Tap the Share button ⬆️ at the bottom of Safari, then "Add to Home Screen".', 'اضغط زر المشاركة ⬆️ أسفل Safari، ثم "إضافة إلى الشاشة الرئيسية".', 'Нажмите «Поделиться» ⬆️ внизу Safari, затем «На экран Домой».'],
     'intro.watch':['צפה בסרטון ההדרכה', 'Watch the guide', 'شاهد الفيديو التعريفي', 'Смотреть обучение'],
     'welcome.start':['בואו נתחיל', "Let's start", 'لنبدأ', 'Начать'],
@@ -1112,7 +1190,10 @@
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
   }
-  function goHome() { go(mode === 'simple' ? 'home-simple' : 'home-pro'); }
+  function goHome() {
+    endCall();
+    go(mode === 'simple' ? 'home-simple' : 'home-pro');
+  }
 
   // Switch display level. If we're on a result, stay on the result in the new mode.
   function setMode(m, onResult) {
@@ -1674,10 +1755,10 @@
           // view) so a user can tell us what happened on their phone.
           const why = t('voice.fail.' + failure);
           const code = t('voice.code', { code: failure.toUpperCase() });
-          showResult(buildResult('voice', file.name, label ? 98 : null, label ? { verdict: 'fake', ...labelled } : {
+          showResult(callAdvice(buildResult('voice', file.name, label ? 98 : null, label ? { verdict: 'fake', ...labelled } : {
             verdict: 'maybe', simpleTitle: t('voice.st'), simpleLine: why + ' ' + code, proTitle: t('voice.pt'),
             proSub: why + ' ' + code + ' — ' + detail
-          }));
+          })));
           return;
         }
         const mean = v.windows.reduce((a, w) => a + w.p, 0) / v.windows.length;
@@ -1685,7 +1766,7 @@
         const verdict = mean >= 0.5 ? 'fake' : anyFake ? 'maybe' : 'real';
         const pct = Math.min(98, Math.max(2, Math.round(mean * 100)));
         const flagged = v.windows.filter(w => w.p >= 0.5);
-        showResult(buildResult('voice', file.name, label ? 98 : pct, {
+        showResult(callAdvice(buildResult('voice', file.name, label ? 98 : pct, {
           verdict,
           proSub: t('sub.voice'),
           total: Math.max(v.duration, 4),
@@ -1693,7 +1774,7 @@
           marks: flagged.map(w => [w.start, t('mark.window', { p: Math.round(w.p * 100) })]),
           bars: v.windows.map(w => [t('bar.window', { t: fmtTime(w.start) }), Math.round(w.p * 100)]),
           ...labelled
-        }));
+        })));
         return;
       }
 
@@ -1898,6 +1979,157 @@
     if (!recorder) return;
     recorder.analyze = analyze;
     recorder.stop();
+  }
+
+  // ---------- Suspicious call: one big button, records the call on speaker for 12 s, then plain advice ----------
+
+  const CALL_SECONDS = 12;
+  let callMode = false;
+  let callTimer = null;
+
+  function openCall() {
+    callMode = true;
+    document.getElementById('call-count').textContent = '';
+    document.getElementById('call-label').textContent = t('call.tap');
+    document.getElementById('call-err').textContent = '';
+    document.getElementById('call-btn').classList.remove('on');
+    go('call');
+    getVoiceSession().catch(() => { /* the check reports the reason if it still fails */ });
+  }
+
+  function endCall() {
+    callMode = false;
+    clearInterval(callTimer);
+  }
+
+  async function toggleCallRecording() {
+    if (recorder) return finishCall();
+    const err = document.getElementById('call-err');
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (e) {
+      err.textContent = t('rec.denied');
+      return;
+    }
+    err.textContent = '';
+    const chunks = [];
+    recorder = new MediaRecorder(stream);
+    recorder.ondataavailable = e => chunks.push(e.data);
+    recorder.onstop = () => {
+      stream.getTracks().forEach(tr => tr.stop());
+      if (recorder && recorder.analyze) {
+        const type = recorder.mimeType || 'audio/webm';
+        analyzeFile(new File([new Blob(chunks, { type })], t('rec.name') + '.webm', { type }));
+      }
+      recorder = null;
+    };
+    try {
+      recorder.start();
+    } catch (e) {
+      stream.getTracks().forEach(tr => tr.stop());
+      recorder = null;
+      err.textContent = t('rec.failed');
+      return;
+    }
+    document.getElementById('call-btn').classList.add('on');
+    document.getElementById('call-label').textContent = t('call.listening');
+    let left = CALL_SECONDS;
+    document.getElementById('call-count').textContent = left;
+    callTimer = setInterval(() => {
+      left--;
+      document.getElementById('call-count').textContent = Math.max(0, left);
+      if (left <= 0) finishCall();
+    }, 1000);
+  }
+
+  function finishCall() {
+    clearInterval(callTimer);
+    document.getElementById('call-btn').classList.remove('on');
+    if (!recorder) return;
+    recorder.analyze = true;
+    recorder.stop();
+  }
+
+  // In call mode, the simple result speaks in plain instructions instead of "fake / real".
+  function callAdvice(d) {
+    if (!callMode) return d;
+    const v = d.verdict;
+    d.simpleTitle = d.pct == null ? d.simpleTitle : t('call.r.' + v + '.t');
+    d.simpleLine = (d.pct == null ? d.simpleLine + ' ' : '') + t('call.r.' + (d.pct == null ? 'maybe' : v) + '.l');
+    return d;
+  }
+
+  // ---------- Investor demo: 5 real examples, back to back, through the real engines ----------
+  // Engines are loaded up front so nothing stalls in front of an investor. The deepfake-video step uses
+  // a prepared example (labelled as such); the other four are real checks of real files.
+
+  const VOICE_DS = 'https://datasets-server.huggingface.co/rows?dataset=garystafford/deepfake-audio-detection&config=default&split=train&length=1&offset=';
+  const DEMO_STEPS = [
+    { key: 'demo.s1', file: async () => fileFromUrl('https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/astronaut.jpg', 'ai-image.jpg', 'image/jpeg') },
+    // City street photo: every engine scores it ~0-4% (the tiger photo trips the second engine at 72%).
+    { key: 'demo.s2', file: async () => fileFromUrl('https://huggingface.co/datasets/Xenova/transformers.js-docs/resolve/main/city-streets.jpg', 'real-photo.jpg', 'image/jpeg') },
+    { key: 'demo.s3', file: async () => fileFromUrl(await voiceRowUrl(1300), 'cloned-voice.wav', 'audio/wav') },
+    { key: 'demo.s4', file: async () => fileFromUrl(await voiceRowUrl(300), 'real-voice.wav', 'audio/wav') },
+    { key: 'demo.s5', demo: 'video' }
+  ];
+  let demoIndex = -1;
+
+  async function fileFromUrl(url, name, type) {
+    return new File([await (await fetch(url)).blob()], name, { type });
+  }
+  async function voiceRowUrl(offset) {
+    const audio = (await (await fetch(VOICE_DS + offset)).json()).rows[0].row.audio;
+    return (audio[0] || audio).src;
+  }
+
+  function demoBar(show, labelKey) {
+    const bar = document.getElementById('demo-bar');
+    bar.classList.toggle('show', show);
+    if (!show) return;
+    document.getElementById('demo-step').textContent = demoIndex < 0 ? '…' : `${demoIndex + 1}/${DEMO_STEPS.length}`;
+    document.getElementById('demo-label').textContent = t(labelKey);
+    document.getElementById('demo-next').textContent = t(demoIndex >= DEMO_STEPS.length - 1 ? 'demo.finish' : 'demo.next');
+  }
+
+  async function startInvestorDemo() {
+    mode = 'pro';
+    demoIndex = -1;
+    demoBar(true, 'demo.loading');
+    document.getElementById('demo-next').disabled = true;
+    showScanning('FakeBreak', t('scan.connecting'));
+    try {
+      await getImageSession(); await getPeSession(); await getCfSession();
+      await getVoiceSession(); await getVadSession();
+    } catch (e) {
+      console.error(e);
+    }
+    demoNext();
+  }
+
+  async function demoNext() {
+    if (demoIndex >= DEMO_STEPS.length - 1) return demoEnd();
+    demoIndex++;
+    const step = DEMO_STEPS[demoIndex];
+    demoBar(true, step.key);
+    const next = document.getElementById('demo-next');
+    next.disabled = true;
+    try {
+      if (step.demo) startDemo(step.demo);
+      else await analyzeFile(await step.file());
+    } catch (e) {
+      console.error(e);
+      toast(t('toast.errFile'));
+    }
+    // Wait until the result is on screen, then allow moving on.
+    for (let i = 0; i < 300 && document.querySelector('.screen.active').id === 'scan'; i++) await new Promise(r => setTimeout(r, 500));
+    next.disabled = false;
+  }
+
+  function demoEnd() {
+    demoIndex = -1;
+    demoBar(false);
+    goHome();
   }
 
   // ---------- Screens ----------
