@@ -233,6 +233,20 @@
   #home-pro h1 { font-size: 22px; font-weight: 500; }
   .scan-options { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 8px; }
 
+  /* How it works */
+  #about { background: var(--violet-soft); color: var(--ink); gap: 12px; }
+  #about .top { display: flex; justify-content: space-between; align-items: center; }
+  #about .switch { border: 2px solid var(--violet); color: var(--ink); font-size: 16px; }
+  #about h1 { font-size: 26px; }
+  .about-card { background: #fff; border-radius: 16px; padding: 14px 16px; }
+  .about-card h2 { font-size: 17px; margin-bottom: 6px; }
+  .about-card p, .about-card li { font-size: 15px; line-height: 1.55; color: #3a3760; }
+  .about-card ul { padding-inline-start: 20px; display: flex; flex-direction: column; gap: 4px; }
+  .about-card.tip { background: var(--amber-soft); }
+  .about-link { font-family: inherit; background: none; border: none; text-decoration: underline; font-size: 15px; cursor: pointer; align-self: center; padding: 4px; }
+  #home-simple .about-link { color: var(--muted); }
+  #home-pro .about-link { color: #AFA9EC; }
+
   /* Investor demo bar (floats over every screen while the demo runs) */
   .demo-bar {
     position: absolute; top: 8px; left: 8px; right: 8px; z-index: 6; display: none; align-items: center; gap: 8px;
@@ -312,6 +326,8 @@
   .recent h2 { font-size: 15px; font-weight: 500; color: #AFA9EC; margin-bottom: 10px; }
   .row { display: flex; align-items: center; justify-content: space-between; background: var(--ink-2); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; font-size: 14px; cursor: pointer; border: 1px solid transparent; }
   .row:hover { border-color: var(--violet); }
+  .history-empty { font-size: 13px; color: #AFA9EC; line-height: 1.5; margin-bottom: 4px; }
+  .h-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%; }
   .pill { font-size: 13px; font-weight: 500; padding: 4px 10px; border-radius: 999px; direction: ltr; }
   .pill.bad { background: #FAECE7; color: #993C1D; }
   .pill.ok { background: #E1F5EE; color: #085041; }
@@ -496,6 +512,7 @@
     <button class="install-btn" id="install-btn" onclick="installApp()" data-t="install.btn"></button>
     <button class="watch-intro" onclick="playIntro()" data-t="intro.watch"></button>
     <button class="watch-intro" onclick="startInvestorDemo()" data-t="demo.start"></button>
+    <button class="watch-intro" onclick="openAbout()" data-t="about.link"></button>
     <button class="btn btn-primary" onclick="go('login')" data-t="welcome.start"></button>
   </section>
 
@@ -563,6 +580,7 @@
     </div>
     <button class="btn btn-text-simple" onclick="openText()" data-t="home.textBtn"></button>
     <button class="btn btn-text-simple" onclick="openRecord()" data-t="home.record"></button>
+    <button class="about-link" onclick="openAbout()" data-t="about.link"></button>
   </section>
 
   <!-- Screen 3b: home, detailed mode -->
@@ -594,10 +612,15 @@
     </div>
     <button class="btn btn-call btn-call-pro" onclick="openCall()" data-t="call.btn"></button>
     <div class="stats">
-      <div class="stat"><div class="n">12</div><div class="l" data-t="stat.scans"></div></div>
-      <div class="stat"><div class="n">5</div><div class="l" data-t="stat.busted"></div></div>
-      <div class="stat"><div class="n" dir="ltr">2/3</div><div class="l" data-t="stat.video"></div></div>
+      <div class="stat"><div class="n" id="stat-total">0</div><div class="l" data-t="stat.scans"></div></div>
+      <div class="stat"><div class="n" id="stat-fakes">0</div><div class="l" data-t="stat.busted"></div></div>
+      <div class="stat"><div class="n" id="stat-today">0</div><div class="l" data-t="stat.today"></div></div>
     </div>
+    <div class="recent">
+      <h2 data-t="home.history"></h2>
+      <div id="history-list"></div>
+    </div>
+    <button class="about-link" onclick="openAbout()" data-t="about.link"></button>
     <div class="recent">
       <h2 data-t="home.demos"></h2>
       <div class="row" onclick="startDemo('video')"><span data-t="d.video.file"></span><span class="pill bad">AI 88%</span></div>
@@ -658,6 +681,26 @@
     <div class="call-count" id="call-count"></div>
     <div class="call-label" id="call-label"></div>
     <p id="call-err" class="call-err"></p>
+  </section>
+
+  <!-- Screen: how it works + privacy -->
+  <section class="screen" id="about">
+    <div class="top">
+      <div class="logo"><span><span class="fake">Fake</span><span class="break">Break</span></span></div>
+      <button class="switch" onclick="closeAbout()" data-t="text.back"></button>
+    </div>
+    <h1 data-t="about.title"></h1>
+    <div class="about-card"><h2 data-t="about.privacyH"></h2><p data-t="about.privacy"></p></div>
+    <div class="about-card"><h2 data-t="about.enginesH"></h2><p data-t="about.engines"></p></div>
+    <div class="about-card"><h2 data-t="about.testsH"></h2>
+      <ul>
+        <li data-t="about.testImg"></li>
+        <li data-t="about.testVoice"></li>
+        <li data-t="about.testVideo"></li>
+      </ul>
+    </div>
+    <div class="about-card"><h2 data-t="about.limitsH"></h2><p data-t="about.limits"></p></div>
+    <div class="about-card tip"><h2 data-t="about.tipH"></h2><p data-t="about.tip"></p></div>
   </section>
 
   <!-- Screen 4: scanning -->
@@ -879,7 +922,23 @@
     'home.textSub': ['הודעה · כתבה', 'Message · Article', 'رسالة · مقال', 'Сообщение · Статья'],
     'stat.scans': ['סריקות', 'Scans', 'عمليات فحص', 'Проверок'],
     'stat.busted': ['זיופים נשברו', 'Fakes busted', 'تزييفات مكشوفة', 'Подделок найдено'],
-    'stat.video': ['וידאו היום', 'Videos today', 'فيديو اليوم', 'Видео сегодня'],
+    'about.link': ['ℹ️ איך FakeBreak עובדת ופרטיות', 'ℹ️ How FakeBreak works and privacy', 'ℹ️ كيف يعمل FakeBreak والخصوصية', 'ℹ️ Как работает FakeBreak и конфиденциальность'],
+    'about.title': ['איך FakeBreak עובדת', 'How FakeBreak works', 'كيف يعمل FakeBreak', 'Как работает FakeBreak'],
+    'about.privacyH': ['🔒 הפרטיות שלך', '🔒 Your privacy', '🔒 خصوصيتك', '🔒 Ваша конфиденциальность'],
+    'about.privacy': ['תמונות, סרטונים והקלטות נבדקים בתוך הטלפון שלך ולא נשלחים לשום מקום. מספר הטלפון לא נשמר, ורשימת הבדיקות נשמרת רק אצלך. רק אם תבחר "חפש באינטרנט", התמונה נשלחת לאתר החיפוש שבחרת.', 'Photos, videos and recordings are checked on your phone and never sent anywhere. Your phone number isn’t stored, and your list of checks stays with you. Only if you choose "Search online" is the image sent to the search site you pick.', 'تُفحص الصور والفيديوهات والتسجيلات على هاتفك ولا تُرسل إلى أي مكان. لا يُحفظ رقم هاتفك، وقائمة فحوصاتك تبقى عندك. فقط إذا اخترت "البحث على الإنترنت" تُرسل الصورة إلى موقع البحث الذي تختاره.', 'Фото, видео и записи проверяются на вашем телефоне и никуда не отправляются. Номер телефона не сохраняется, а список проверок остаётся у вас. Только если вы выберете «Искать в интернете», фото уйдёт на выбранный сайт поиска.'],
+    'about.enginesH': ['🧠 המנועים', '🧠 The engines', '🧠 المحركات', '🧠 Движки'],
+    'about.engines': ['שלושה מנועי AI לתמונות "מצביעים" על כל תמונה ועל כל פריים בסרטון. מנוע קול (pellav2) בודק קולות, וגלאי דיבור מוודא שבודקים רק דיבור. בנוסף מחפשים חותמת AI בתוך הקובץ ופרטי מצלמה, וסורקים כל אזור בתמונה.', 'Three AI image engines "vote" on every photo and every video frame. A voice engine (pellav2) checks voices, and a speech detector makes sure only speech is checked. We also look for AI labels and camera details inside the file, and scan every area of the image.', 'ثلاثة محركات ذكاء اصطناعي للصور "تصوّت" على كل صورة وكل إطار فيديو. محرك صوت (pellav2) يفحص الأصوات، وكاشف كلام يتأكد من فحص الكلام فقط. نبحث أيضًا عن علامات الذكاء الاصطناعي وبيانات الكاميرا داخل الملف، ونفحص كل منطقة في الصورة.', 'Три ИИ-движка для изображений «голосуют» по каждому фото и кадру видео. Голосовой движок (pellav2) проверяет голоса, а детектор речи следит, чтобы проверялась только речь. Мы также ищем метки ИИ и данные камеры в файле и сканируем каждую область снимка.'],
+    'about.testsH': ['📊 מה בדקנו', '📊 What we tested', '📊 ما اختبرناه', '📊 Что мы проверили'],
+    'about.testImg': ['תמונות: מתוך 25 תמונות AI, 22 זוהו כמזויפות ו-3 כ"לא בטוח". אף אחת לא סומנה כאמיתית.', 'Photos: of 25 AI images, 22 were flagged fake and 3 "not sure". None was called real.', 'الصور: من 25 صورة ذكاء اصطناعي، 22 كُشفت كمزيفة و3 "غير متأكد". لم تُعتبر أي منها حقيقية.', 'Фото: из 25 ИИ-изображений 22 помечены как подделка, 3 — «не уверены». Ни одно не названо настоящим.'],
+    'about.testVoice': ['קול: 41 מתוך 41 הקלטות באנגלית ו-26 מתוך 26 בעברית זוהו נכון.', 'Voice: 41 of 41 English and 26 of 26 Hebrew recordings were identified correctly.', 'الصوت: 41 من 41 تسجيلًا بالإنجليزية و26 من 26 بالعبرية حُددت بشكل صحيح.', 'Голос: 41 из 41 английских и 26 из 26 записей на иврите определены верно.'],
+    'about.testVideo': ['סרטונים: בדיקה קטנה של 5 סרטונים, כולם זוהו נכון.', 'Videos: a small test of 5 videos, all identified correctly.', 'الفيديو: اختبار صغير على 5 فيديوهات، كلها حُددت بشكل صحيح.', 'Видео: небольшой тест на 5 роликах, все определены верно.'],
+    'about.limitsH': ['⚠️ המגבלות', '⚠️ Limitations', '⚠️ القيود', '⚠️ Ограничения'],
+    'about.limits': ['אף מערכת לא מושלמת. סרטונים ממחוללים חדשים (Veo, Sora), במיוחד אחרי וואטסאפ, קשים מאוד לזיהוי, ולכן כשיש ספק נגיד "לא בטוח" ולא "אמיתי". בדיקת טקסט בעברית עוד לא זמינה.', 'No system is perfect. Videos from the newest generators (Veo, Sora), especially after WhatsApp, are very hard to detect, so when in doubt we say "not sure", never "real". Hebrew text checks aren’t available yet.', 'لا يوجد نظام مثالي. فيديوهات المولدات الحديثة (Veo وSora)، خاصة بعد واتساب، صعبة الكشف جدًا، لذلك عند الشك نقول "غير متأكد" وليس "حقيقي". فحص النص العبري غير متاح بعد.', 'Ни одна система не идеальна. Видео новейших генераторов (Veo, Sora), особенно после WhatsApp, очень трудно распознать, поэтому при сомнении мы говорим «не уверены», а не «настоящее». Проверка текста на иврите пока недоступна.'],
+    'about.tipH': ['💡 הכלל הכי חשוב', '💡 The most important rule', '💡 القاعدة الأهم', '💡 Главное правило'],
+    'about.tip': ['אם מבקשים ממך כסף או קוד, גם אם הקול נשמע אמיתי, נתק והתקשר בעצמך למספר שאתה מכיר.', 'If someone asks you for money or a code, even if the voice sounds real, hang up and call back on a number you know.', 'إذا طلب منك أحد مالًا أو رمزًا، حتى لو بدا الصوت حقيقيًا، أغلق الخط واتصل بنفسك على رقم تعرفه.', 'Если у вас просят деньги или код, даже если голос звучит по-настоящему, положите трубку и перезвоните на известный вам номер.'],
+    'stat.today':['היום', 'Today', 'اليوم', 'Сегодня'],
+    'home.history': ['הבדיקות שלי', 'My checks', 'فحوصاتي', 'Мои проверки'],
+    'home.historyEmpty': ['עוד לא בדקת כלום. העלה קובץ, כתוב טקסט או הקלט כדי להתחיל. הרשימה נשמרת רק בטלפון שלך.', "You haven't checked anything yet. Upload a file, write text or record to start. This list stays on your phone only.", 'لم تفحص شيئًا بعد. ارفع ملفًا أو اكتب نصًا أو سجّل للبدء. القائمة تبقى على هاتفك فقط.', 'Вы ещё ничего не проверяли. Загрузите файл, напишите текст или запишите голос. Список хранится только на вашем телефоне.'],
     'home.demos': ['דוגמאות מוכנות להדגמה', 'Ready-made demo examples', 'أمثلة جاهزة للعرض', 'Готовые примеры для демонстрации'],
 
     'text.back': ['חזרה', 'Back', 'رجوع', 'Назад'],
@@ -998,7 +1057,8 @@
     return s;
   }
 
-  function setLang(l) {
+  // `quiet`: switch the language without moving to another screen (used when opening a shared file).
+  function setLang(l, quiet) {
     lang = l;
     document.documentElement.lang = l;
     document.documentElement.dir = RTL.includes(l) ? 'rtl' : 'ltr';
@@ -1007,6 +1067,8 @@
     document.getElementById('country').value = l === 'en' ? 'US' : 'IL';
     updatePhonePlaceholder();
     updateInstallButton();
+    try { localStorage.setItem('fakebreak-lang', l); } catch (e) { /* storage blocked */ }
+    if (quiet) return;
     let seen = false;
     try { seen = localStorage.getItem('fakebreak-intro-seen') === '1'; } catch (e) { /* storage blocked */ }
     if (seen) go('welcome');
@@ -1217,14 +1279,103 @@
   }
   function goHome() {
     endCall();
+    if (mode !== 'simple') renderHistory();
     go(mode === 'simple' ? 'home-simple' : 'home-pro');
+  }
+
+  // ---------- "How it works" screen (from the welcome screen or either home) ----------
+
+  let aboutBack = 'welcome';
+  function openAbout() {
+    aboutBack = document.querySelector('.screen.active').id;
+    go('about');
+  }
+  function closeAbout() {
+    if (aboutBack === 'home-simple' || aboutBack === 'home-pro') goHome();
+    else go(aboutBack);
+  }
+
+  // ---------- History of real checks (kept only on this phone; demo examples are not saved) ----------
+
+  const HISTORY_KEY = 'fakebreak-history';
+  const HISTORY_MAX = 20;
+
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch (e) { return []; }
+  }
+
+  function saveToHistory(d) {
+    if (!d.live || d.saved) return;
+    d.saved = true;
+    const { preview, heat, ...rest } = d; // the photo itself stays out of storage
+    const list = [{ ...rest, when: Date.now() }, ...loadHistory()].slice(0, HISTORY_MAX);
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); } catch (e) { /* storage full or blocked */ }
+  }
+
+  function renderHistory() {
+    const list = loadHistory();
+    const today = new Date().toDateString();
+    document.getElementById('stat-total').textContent = list.length;
+    document.getElementById('stat-fakes').textContent = list.filter(h => h.verdict === 'fake').length;
+    document.getElementById('stat-today').textContent = list.filter(h => new Date(h.when).toDateString() === today).length;
+    const box = document.getElementById('history-list');
+    box.innerHTML = '';
+    if (!list.length) {
+      const p = document.createElement('p');
+      p.className = 'history-empty';
+      p.textContent = t('home.historyEmpty');
+      box.appendChild(p);
+      return;
+    }
+    for (const h of list.slice(0, 6)) {
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = '<span class="h-name"></span><span class="pill"></span>';
+      row.querySelector('.h-name').textContent = h.file;
+      const pill = row.querySelector('.pill');
+      pill.classList.add(h.verdict === 'fake' ? 'bad' : h.verdict === 'real' ? 'ok' : 'maybe');
+      pill.textContent = h.pct == null || h.unsure ? '?' : 'AI ' + h.pct + '%';
+      row.onclick = () => showResult({ ...h, saved: true });
+      box.appendChild(row);
+    }
   }
 
   // Switch display level. If we're on a result, stay on the result in the new mode.
   function setMode(m, onResult) {
     mode = m;
+    try { localStorage.setItem('fakebreak-mode', m); } catch (e) { /* storage blocked */ }
     if (onResult && current) showResult(current);
     else goHome();
+  }
+
+  // Opened from another app's Share menu (sw.js kept the file or text): check it right away, in the
+  // language and view the person picked last time (Hebrew + simple if they never did).
+  async function openShared() {
+    history.replaceState(null, '', location.pathname);
+    let savedLang = null, savedMode = null;
+    try { savedLang = localStorage.getItem('fakebreak-lang'); savedMode = localStorage.getItem('fakebreak-mode'); } catch (e) { /* storage blocked */ }
+    setLang(LANGS.includes(savedLang) ? savedLang : 'he', true);
+    mode = savedMode === 'pro' ? 'pro' : 'simple';
+    try {
+      const cache = await caches.open('fakebreak-share');
+      const fileRes = await cache.match('file');
+      const textRes = await cache.match('text');
+      await cache.delete('file');
+      await cache.delete('text');
+      if (fileRes) {
+        const name = decodeURIComponent(fileRes.headers.get('X-File-Name') || 'shared');
+        const blob = await fileRes.blob();
+        return analyzeFile(new File([blob], name, { type: blob.type || fileRes.headers.get('Content-Type') || '' }));
+      }
+      if (textRes) {
+        openText();
+        document.getElementById('text-input').value = await textRes.text();
+        return;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    goHome();
   }
 
   // ---------- Detection engine (runs fully in the browser, files never leave the device) ----------
@@ -1830,8 +1981,10 @@
         }
         if (label) bars.unshift([t('bar.label'), 100]);
         if (current && current.preview) URL.revokeObjectURL(current.preview);
+        // "Not sure" only because of a patch: the engines gave no overall number, so show "?" rather than one we made up.
+        const unsure = !label && c.patch && c.verdict === 'maybe';
         showResult(buildResult('image', file.name, label ? 98 : c.pct, {
-          verdict: c.verdict, bars, preview: url, heat, ...(proSub ? { proSub } : {}), ...labelled
+          verdict: c.verdict, bars, preview: url, heat, unsure, ...(proSub ? { proSub } : {}), ...labelled
         }));
         return;
       }
@@ -1898,7 +2051,7 @@
 
       showResult(buildResult('video', file.name, label ? 98 : Math.min(98, pct), {
         verdict, proSub, total: duration, segments, marks, bars,
-        ...(newGenerator && verdict === 'maybe' ? { simpleLine: t('line.videoNew') } : {}),
+        ...(newGenerator && verdict === 'maybe' ? { simpleLine: t('line.videoNew'), unsure: true } : {}),
         ...labelled
       }));
     } catch (e) {
@@ -2291,6 +2444,7 @@
 
   function showResult(d) {
     current = d;
+    saveToHistory(d);
     if (mode === 'simple') {
       document.getElementById('rs-card').className = 'verdict-card v-' + d.verdict;
       document.getElementById('rs-icon').innerHTML = ICONS[d.verdict];
@@ -2306,7 +2460,8 @@
     ring.style.transition = 'none';
     ring.setAttribute('stroke', COLORS[d.verdict]);
     ring.setAttribute('stroke-dasharray', '0 100');
-    document.getElementById('rp-pct').textContent = d.pct == null ? '?' : d.pct + '%';
+    // "?" when the engines couldn't give a real number (rather than showing one we picked to mean "not sure").
+    document.getElementById('rp-pct').textContent = d.pct == null || d.unsure ? '?' : d.pct + '%';
     document.getElementById('rp-title').textContent = d.proTitle;
     document.getElementById('rp-title').style.color = COLORS[d.verdict];
     document.getElementById('rp-sub').textContent = d.proSub;
@@ -2355,7 +2510,7 @@
     go('result-pro');
     requestAnimationFrame(() => setTimeout(() => {
       ring.style.transition = 'stroke-dasharray .9s ease-out';
-      ring.setAttribute('stroke-dasharray', (d.pct || 0) + ' 100');
+      ring.setAttribute('stroke-dasharray', (d.unsure ? 0 : d.pct || 0) + ' 100');
     }, 50));
   }
 
@@ -2455,7 +2610,7 @@
     ctx.font = font(76, 700);
     ctx.fillText(d.simpleTitle, S / 2, 640);
     let y = 720;
-    if (d.pct != null) {
+    if (d.pct != null && !d.unsure) {
       ctx.fillStyle = '#FFFFFF';
       ctx.font = font(48);
       ctx.fillText(`AI ${d.pct}%`, S / 2, y);
@@ -2490,7 +2645,7 @@
   async function share() {
     const d = current;
     if (!d) return;
-    const text = t('share.text', { verdict: d.simpleTitle + (d.pct != null ? ` (AI ${d.pct}%)` : '') }) + ' ' + APP_URL;
+    const text = t('share.text', { verdict: d.simpleTitle + (d.pct != null && !d.unsure ? ` (AI ${d.pct}%)` : '') }) + ' ' + APP_URL;
     try {
       const blob = await new Promise(res => shareImage(d).toBlob(res, 'image/png'));
       const file = new File([blob], 'fakebreak-result.png', { type: 'image/png' });
@@ -2510,6 +2665,8 @@
     el.classList.add('show');
     setTimeout(() => el.classList.remove('show'), 2500);
   }
+
+  if (new URLSearchParams(location.search).has('shared')) openShared();
 </script>
 </body>
 </html>
