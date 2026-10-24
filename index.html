@@ -724,7 +724,9 @@
     'scan.voice': ['מנתח את הקול... קטע {i} מתוך {n}', 'Analyzing the voice... part {i} of {n}', 'جارٍ تحليل الصوت... الجزء {i} من {n}', 'Анализируем голос... часть {i} из {n}'],
     'bar.window': ['קטע מ-{t}', 'Part from {t}', 'الجزء من {t}', 'Часть с {t}'],
     'mark.window': ['קול חשוד כ-AI ({p}%)', 'Voice suspected AI ({p}%)', 'صوت يُشتبه أنه ذكاء اصطناعي ({p}%)', 'Голос похож на ИИ ({p}%)'],
-    'voice.fail.nospeech': ['לא שמענו מספיק דיבור בהקלטה. צריך לפחות 2 שניות של מישהו שמדבר.', "We didn't hear enough speech. We need at least 2 seconds of someone talking.", 'لم نسمع كلامًا كافيًا. نحتاج إلى ثانيتين على الأقل من شخص يتحدث.', 'Мы не услышали достаточно речи. Нужно хотя бы 2 секунды, где кто-то говорит.'],
+    'voice.fail.vad': ['גלאי הדיבור לא הצליח לפעול במכשיר הזה.', "The speech detector couldn't run on this device.", 'تعذّر تشغيل كاشف الكلام على هذا الجهاز.', 'Детектор речи не запустился на этом устройстве.'],
+    'voice.code': ['(קוד: {code})', '(code: {code})', '(الرمز: {code})', '(код: {code})'],
+    'voice.fail.nospeech':['לא שמענו מספיק דיבור בהקלטה. צריך לפחות 2 שניות של מישהו שמדבר.', "We didn't hear enough speech. We need at least 2 seconds of someone talking.", 'لم نسمع كلامًا كافيًا. نحتاج إلى ثانيتين على الأقل من شخص يتحدث.', 'Мы не услышали достаточно речи. Нужно хотя бы 2 секунды, где кто-то говорит.'],
     'scan.vad': ['מחפש דיבור בהקלטה...', 'Looking for speech...', 'جارٍ البحث عن كلام...', 'Ищем речь...'],
     'bar.videoVoice': ['הקול בסרטון', 'Voice in the video', 'الصوت في الفيديو', 'Голос в видео'],
     'sub.videoVoice': ['התמונה בסרטון נראית אמיתית, אבל הקול נשמע כמו קול שנוצר ב-AI. היזהר.', 'The picture looks real, but the voice sounds AI-made. Be careful.', 'تبدو الصورة حقيقية، لكن الصوت يبدو مصنوعًا بالذكاء الاصطناعي. كن حذرًا.', 'Картинка выглядит настоящей, но голос похож на созданный ИИ. Будьте осторожны.'],
@@ -1108,7 +1110,9 @@
   const VOICE_WINDOWS = 3;
   // Speech detector (Silero VAD v5, MIT, 2 MB). pellav2 only knows speech: on music and background noise
   // it said "fake" 92-100%, so we only send it 4-second windows that are mostly speech.
-  const VAD_MODEL_URL = 'https://huggingface.co/onnx-community/silero-vad/resolve/main/onnx/model.onnx';
+  // Hosted next to the app (copy of onnx-community/silero-vad onnx/model.onnx), so it works even where
+  // huggingface.co is blocked.
+  const VAD_MODEL_URL = 'voice-model/silero_vad.onnx';
   const VAD_CHUNK = 512;              // 32 ms at 16 kHz
   const MIN_SPEECH_SECONDS = 1.5;
   const TEXT_MODEL = 'onnx-community/tmr-ai-text-detector-ONNX'; // labels: human / ai
@@ -1144,10 +1148,25 @@
   }
 
   // Download a model file once, showing progress, and keep it in the browser cache for next time.
+  // The browser cache is optional: some browsers (e.g. in-app browsers like WhatsApp's) have no Cache
+  // Storage, or fail reading large entries. Any cache problem just means we download again.
+  async function openModelCache() {
+    try { return await caches.open('fakebreak-models'); } catch (e) { return null; }
+  }
+  async function cachedBytes(cache, key) {
+    if (!cache) return null;
+    try {
+      const hit = await cache.match(key);
+      return hit ? await hit.arrayBuffer() : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   async function fetchModel(url) {
-    const cache = await caches.open('fakebreak-models');
-    const hit = await cache.match(url);
-    if (hit) return hit.arrayBuffer();
+    const cache = await openModelCache();
+    const hit = await cachedBytes(cache, url);
+    if (hit) return hit;
     const res = await fetch(url);
     if (!res.ok) throw new Error('model download failed');
     const total = +res.headers.get('content-length') || 0;
@@ -1162,7 +1181,7 @@
       if (total) downloadProgress(loaded, total);
     }
     const blob = new Blob(chunks);
-    try { await cache.put(url, new Response(blob)); } catch (e) { /* storage full: just skip caching */ }
+    if (cache) try { await cache.put(url, new Response(blob)); } catch (e) { /* storage full: just skip caching */ }
     return blob.arrayBuffer();
   }
 
@@ -1188,15 +1207,26 @@
   async function getVoiceSession() {
     if (!voiceSession) {
       voiceSession = (async () => {
-        if (!ort) ort = await import(ORT_URL);
-        const manifest = await (await fetch(VOICE_MODEL_DIR + 'manifest.json')).json();
+        try {
+          if (!ort) ort = await import(ORT_URL);
+        } catch (e) {
+          throw stageError('download', e);
+        }
+        let manifest;
+        try {
+          const res = await fetch(VOICE_MODEL_DIR + 'manifest.json', { cache: 'no-cache' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          manifest = await res.json();
+        } catch (e) {
+          throw stageError('download', e);
+        }
         const key = new URL(VOICE_MODEL_DIR + 'pellav2-' + manifest.sha256 + '.onnx', location.href).href;
-        const cache = await caches.open('fakebreak-models');
-        const hit = await cache.match(key);
+        const cache = await openModelCache();
+        const hit = await cachedBytes(cache, key);
         let bytes;
         try {
           if (hit) {
-            bytes = new Uint8Array(await hit.arrayBuffer());
+            bytes = new Uint8Array(hit);
           } else {
             bytes = new Uint8Array(manifest.size);
             let loaded = 0;
@@ -1208,10 +1238,11 @@
               loaded += part.length;
               downloadProgress(loaded, manifest.size);
             }
-            try { await cache.put(key, new Response(bytes)); } catch (e) { /* storage full: just skip caching */ }
+            if (cache) try { await cache.put(key, new Response(bytes)); } catch (e) { /* storage full: just skip caching */ }
           }
         } catch (e) {
-          throw stageError(e instanceof RangeError ? 'memory' : 'download', e);
+          // A failed allocation of the 369 MB buffer is a memory problem, not a network one.
+          throw stageError(e instanceof RangeError || /memory|allocation/i.test(e && e.message) ? 'memory' : 'download', e);
         }
         setProgress(t('scan.preparing'));
         try {
@@ -1321,7 +1352,7 @@
     try {
       probs = await speechProbs(mono);
     } catch (e) {
-      throw stageError('download', e);
+      throw stageError('vad', e);
     }
     const speechSeconds = probs.filter(p => p > 0.5).length * VAD_CHUNK / PELLA_SR;
     if (speechSeconds < MIN_SPEECH_SECONDS) throw stageError('nospeech', speechSeconds.toFixed(1) + ' s of speech');
@@ -1578,19 +1609,22 @@
       // Voice: pellav2 runs on the device. If the engine can't load (e.g. not enough memory on an older
       // phone), fall back to the AI label check and say honestly that we couldn't check the voice.
       if (kind === 'voice') {
-        let v = null, failure = null;
+        let v = null, failure = null, detail = '';
         try {
           v = await scoreVoice(file);
         } catch (e) {
           console.error(e);
           failure = e.stage || 'run';
+          detail = String(e && e.message || e).slice(0, 120);
         }
         if (!v) {
-          // Say exactly what failed, plus the technical message in the detailed view (helps us fix it).
+          // Say exactly what failed, plus a short error code (and the technical message in the detailed
+          // view) so a user can tell us what happened on their phone.
           const why = t('voice.fail.' + failure);
+          const code = t('voice.code', { code: failure.toUpperCase() });
           showResult(buildResult('voice', file.name, label ? 98 : null, label ? { verdict: 'fake', ...labelled } : {
-            verdict: 'maybe', simpleTitle: t('voice.st'), simpleLine: why + ' ' + t('voice.sl'), proTitle: t('voice.pt'),
-            proSub: why + ' (' + failure + ')'
+            verdict: 'maybe', simpleTitle: t('voice.st'), simpleLine: why + ' ' + code, proTitle: t('voice.pt'),
+            proSub: why + ' ' + code + ' — ' + detail
           }));
           return;
         }
