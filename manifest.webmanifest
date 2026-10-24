@@ -1,0 +1,16 @@
+{
+  "name": "FakeBreak",
+  "short_name": "FakeBreak",
+  "description": "Check if a photo, video, voice or text was made with AI.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#26215C",
+  "theme_color": "#26215C",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
