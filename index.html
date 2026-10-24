@@ -735,7 +735,7 @@
     'voice.fail.decode':['לא הצלחנו לקרוא את ההקלטה.', "We couldn't read the recording.", 'لم نتمكن من قراءة التسجيل.', 'Не удалось прочитать запись.'],
     'voice.fail.short': ['ההקלטה קצרה מדי. הקלט לפחות 2 שניות של דיבור.', 'The recording is too short. Record at least 2 seconds of speech.', 'التسجيل قصير جدًا. سجّل ثانيتين على الأقل من الكلام.', 'Запись слишком короткая. Запишите хотя бы 2 секунды речи.'],
     'voice.fail.download': ['לא הצלחנו להוריד את מנוע הקול. בדוק את החיבור לאינטרנט ונסה שוב.', "We couldn't download the voice engine. Check your connection and try again.", 'لم نتمكن من تنزيل محرك الصوت. تحقق من الاتصال وحاول مرة أخرى.', 'Не удалось загрузить голосовой движок. Проверьте интернет и попробуйте снова.'],
-    'voice.fail.memory': ['אין מספיק זיכרון במכשיר כדי להפעיל את מנוע הקול (813MB). נסה במחשב.', 'Not enough memory on this device to run the voice engine (813 MB). Try on a computer.', 'لا توجد ذاكرة كافية على الجهاز لتشغيل محرك الصوت (813MB). جرّب على حاسوب.', 'Недостаточно памяти для голосового движка (813 МБ). Попробуйте на компьютере.'],
+    'voice.fail.memory': ['אין מספיק זיכרון במכשיר כדי להפעיל את מנוע הקול (370MB). סגור אפליקציות אחרות או נסה במחשב.', 'Not enough memory on this device to run the voice engine (370 MB). Close other apps or try on a computer.', 'لا توجد ذاكرة كافية على الجهاز لتشغيل محرك الصوت (370MB). أغلق التطبيقات الأخرى أو جرّب على حاسوب.', 'Недостаточно памяти для голосового движка (370 МБ). Закройте другие приложения или попробуйте на компьютере.'],
     'voice.fail.run': ['מנוע הקול נכשל בזמן הבדיקה.', 'The voice engine failed during the check.', 'فشل محرك الصوت أثناء الفحص.', 'Голосовой движок дал сбой во время проверки.'],
     'voice.st': ['לא הצלחנו לבדוק את הקול', "We couldn't check the voice", 'لم نتمكن من فحص الصوت', 'Не удалось проверить голос'],
     'voice.sl': ['קולות מזויפים קשים מאוד לזיהוי. אם מבקשים ממך כסף או סוד, נתק והתקשר בעצמך למספר שאתה מכיר.', 'Fake voices are very hard to detect. If someone asks for money or secrets, hang up and call them back on a number you know.', 'الأصوات المزيفة صعبة الكشف جدًا. إذا طلب أحدهم مالًا أو أسرارًا، أغلق الخط واتصل به على رقم تعرفه.', 'Поддельные голоса очень трудно распознать. Если просят денег или секретов — положите трубку и перезвоните на известный вам номер.'],
@@ -1098,12 +1098,14 @@
     ['Leonardo.Ai', 'Leonardo'], ['Ideogram', 'Ideogram'], ['Microsoft Designer', 'Microsoft'], ['Bing Image Creator', 'Microsoft'],
     ['ElevenLabs', 'ElevenLabs']
   ];
-  // Voice engine: pellav2 (MIT, 95.8% on the Podonos benchmark), converted to ONNX int8 and split into
-  // 45 MB parts next to the app. The published checkpoint had 6 damaged tensors; we replaced them with
+  // Voice engine: pellav2 (MIT, 95.8% on the Podonos benchmark), converted to ONNX and split into
+  // 20 MB parts next to the app. The published checkpoint had 6 damaged tensors; we replaced them with
   // w2v-bert-2.0 base weights (fine-tuning moves weights ~1.5%) and it scored 20/20 on our voice test set.
+  // For phones it's 4-bit (MatMulNBits, 369 MB instead of 813 MB int8; still 20/20). That's ~8.5 s per
+  // 4-second window in the browser, so we check at most 3 windows.
   // Input: pella.js fbank features [1, T, 160] + attention mask [1, T]; output: one logit (sigmoid = fake).
   const VOICE_MODEL_DIR = 'voice-model/';
-  const VOICE_WINDOWS = 5;
+  const VOICE_WINDOWS = 3;
   // Speech detector (Silero VAD v5, MIT, 2 MB). pellav2 only knows speech: on music and background noise
   // it said "fake" 92-100%, so we only send it 4-second windows that are mostly speech.
   const VAD_MODEL_URL = 'https://huggingface.co/onnx-community/silero-vad/resolve/main/onnx/model.onnx';
