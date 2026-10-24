@@ -4,6 +4,85 @@
 const PELLA_SR = 16000;
 const PELLA_CROP = 4 * PELLA_SR;
 
+// Exact port of torchaudio.functional.resample (sinc_interp_hann, lowpass_filter_width 6, rolloff 0.99).
+// The detector looks at high frequencies, so the browser's own resampler (slightly different filter)
+// turned a real 44.1 kHz clip into "99.6% fake"; with this port it matches Python.
+function pellaResample(x, orig, target) {
+  if (orig === target) return Float32Array.from(x);
+  const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+  const g = gcd(orig, target), o = orig / g, n = target / g;
+  const LPW = 6, base = Math.min(o, n) * 0.99;
+  const width = Math.ceil(LPW * o / base);
+  const klen = 2 * width + o;
+  const kernels = [];
+  for (let j = 0; j < n; j++) {
+    const k = new Float64Array(klen);
+    for (let i = 0; i < klen; i++) {
+      let t = (-j / n + (i - width) / o) * base;
+      t = Math.max(-LPW, Math.min(LPW, t));
+      const win = Math.cos(t * Math.PI / LPW / 2) ** 2;
+      const tp = t * Math.PI;
+      k[i] = (tp === 0 ? 1 : Math.sin(tp) / tp) * win * base / o;
+    }
+    kernels.push(k);
+  }
+  const padded = new Float64Array(x.length + klen);
+  padded.set(x, width);
+  const frames = Math.floor((padded.length - klen) / o) + 1;
+  const outLen = Math.ceil(n * x.length / o);
+  const out = new Float32Array(outLen);
+  for (let f = 0; f < frames; f++) {
+    for (let j = 0; j < n; j++) {
+      const idx = f * n + j;
+      if (idx >= outLen) return out;
+      const k = kernels[j], off = f * o;
+      let s = 0;
+      for (let i = 0; i < klen; i++) s += padded[off + i] * k[i];
+      out[idx] = s;
+    }
+  }
+  return out;
+}
+
+// Read a WAV file directly (PCM 8/16/24/32-bit or float), so it's not resampled by the browser on decode.
+// Returns { rate, mono } or null if it isn't a WAV we understand.
+function pellaParseWav(buf) {
+  const v = new DataView(buf);
+  const str = (o, len) => String.fromCharCode(...new Uint8Array(buf, o, len));
+  if (buf.byteLength < 44 || str(0, 4) !== 'RIFF' || str(8, 4) !== 'WAVE') return null;
+  let o = 12, fmt = null;
+  while (o + 8 <= buf.byteLength) {
+    const id = str(o, 4), size = v.getUint32(o + 4, true);
+    if (id === 'fmt ') {
+      let format = v.getUint16(o + 8, true);
+      if (format === 0xFFFE && size >= 26) format = v.getUint16(o + 32, true); // WAVE_FORMAT_EXTENSIBLE
+      fmt = { format, channels: v.getUint16(o + 10, true), rate: v.getUint32(o + 12, true), bits: v.getUint16(o + 22, true) };
+    } else if (id === 'data' && fmt) {
+      const { format, channels, rate, bits } = fmt, bytes = bits / 8;
+      if (!(format === 1 || format === 3) || ![8, 16, 24, 32, 64].includes(bits)) return null;
+      const frames = Math.floor(Math.min(size, buf.byteLength - o - 8) / (bytes * channels));
+      const mono = new Float32Array(frames);
+      let p = o + 8;
+      for (let i = 0; i < frames; i++) {
+        let sum = 0;
+        for (let c = 0; c < channels; c++, p += bytes) {
+          let s;
+          if (format === 3) s = bits === 32 ? v.getFloat32(p, true) : v.getFloat64(p, true);
+          else if (bits === 8) s = (v.getUint8(p) - 128) / 128;
+          else if (bits === 16) s = v.getInt16(p, true) / 32768;
+          else if (bits === 24) s = ((v.getUint8(p) | (v.getUint8(p + 1) << 8) | (v.getInt8(p + 2) << 16))) / 8388608;
+          else s = v.getInt32(p, true) / 2147483648;
+          sum += s;
+        }
+        mono[i] = sum / channels;
+      }
+      return { rate, mono };
+    }
+    o += 8 + size + (size & 1);
+  }
+  return null;
+}
+
 // 2nd-order Butterworth high-pass at 20 Hz (same as scipy butter(2, 20, 'highpass', fs=16000)),
 // applied forwards and backwards like scipy's sosfiltfilt (odd padding of 9 samples, steady-state start).
 function pellaHighpass(x) {
