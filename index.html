@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FakeBreak</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#26215C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="FakeBreak">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -48,6 +55,12 @@
     background: var(--paper);
     border: 10px solid #111;
   }
+  /* On a real phone (or the installed app), fill the screen instead of drawing a phone frame. */
+  @media (max-width: 500px) {
+    body { padding: 0; }
+    .phone { max-width: none; height: 100vh; height: 100dvh; max-height: none; border: 0; border-radius: 0; }
+  }
+  .install-btn { font-family: inherit; background: none; border: 1px solid var(--violet); color: #fff; border-radius: 999px; padding: 8px 16px; font-size: 15px; cursor: pointer; margin-bottom: 10px; display: none; }
   .screen {
     position: absolute;
     inset: 0;
@@ -442,6 +455,7 @@
       <p class="tagline" data-t="welcome.tagline"></p>
       <p class="sub" data-t="welcome.sub"></p>
     </div>
+    <button class="install-btn" id="install-btn" onclick="installApp()" data-t="install.btn"></button>
     <button class="watch-intro" onclick="playIntro()" data-t="intro.watch"></button>
     <button class="btn btn-primary" onclick="go('login')" data-t="welcome.start"></button>
   </section>
@@ -689,7 +703,9 @@
     'web.copied': ['התמונה הועתקה. באתר שנפתח לחץ Ctrl+V כדי להדביק אותה.', 'Image copied. On the site that opened, press Ctrl+V to paste it.', 'تم نسخ الصورة. في الموقع الذي فُتح اضغط Ctrl+V للصقها.', 'Фото скопировано. На открывшемся сайте нажмите Ctrl+V, чтобы вставить.'],
     'web.upload': ['באתר שנפתח, העלה את התמונה כדי לחפש אותה.', 'On the site that opened, upload the image to search for it.', 'في الموقع الذي فُتح، ارفع الصورة للبحث عنها.', 'На открывшемся сайте загрузите фото для поиска.'],
     'web.simpleBtn': ['חפש את התמונה באינטרנט', 'Search this image online', 'ابحث عن الصورة على الإنترنت', 'Найти фото в интернете'],
-    'intro.watch': ['צפה בסרטון ההדרכה', 'Watch the guide', 'شاهد الفيديو التعريفي', 'Смотреть обучение'],
+    'install.btn': ['📲 התקן את FakeBreak על מסך הבית', '📲 Install FakeBreak on your home screen', '📲 ثبّت FakeBreak على الشاشة الرئيسية', '📲 Установить FakeBreak на главный экран'],
+    'install.ios': ['לחץ על כפתור השיתוף ⬆️ בתחתית Safari, ואז "הוסף למסך הבית".', 'Tap the Share button ⬆️ at the bottom of Safari, then "Add to Home Screen".', 'اضغط زر المشاركة ⬆️ أسفل Safari، ثم "إضافة إلى الشاشة الرئيسية".', 'Нажмите «Поделиться» ⬆️ внизу Safari, затем «На экран Домой».'],
+    'intro.watch':['צפה בסרטון ההדרכה', 'Watch the guide', 'شاهد الفيديو التعريفي', 'Смотреть обучение'],
     'welcome.start':['בואו נתחיל', "Let's start", 'لنبدأ', 'Начать'],
 
     'login.title': ['מה מספר הטלפון שלך?', "What's your phone number?", 'ما رقم هاتفك؟', 'Ваш номер телефона?'],
@@ -887,10 +903,46 @@
     document.querySelectorAll('[data-t-ph]').forEach(el => { el.placeholder = t(el.dataset.tPh); });
     document.getElementById('country').value = l === 'en' ? 'US' : 'IL';
     updatePhonePlaceholder();
+    updateInstallButton();
     let seen = false;
     try { seen = localStorage.getItem('fakebreak-intro-seen') === '1'; } catch (e) { /* storage blocked */ }
     if (seen) go('welcome');
     else playIntro();
+  }
+
+  // ---------- Install to home screen (free, no app store) ----------
+  // Android/desktop Chrome: offer the browser's own install prompt. iPhone: Safari has no prompt, so the
+  // button explains "Share → Add to Home Screen". Hidden when already running as the installed app.
+
+  let installPrompt = null;
+  const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+  function updateInstallButton() {
+    const btn = document.getElementById('install-btn');
+    btn.style.display = !isStandalone() && (installPrompt || isIos()) ? 'inline-block' : 'none';
+  }
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    installPrompt = e;
+    updateInstallButton();
+  });
+  window.addEventListener('appinstalled', () => { installPrompt = null; updateInstallButton(); });
+
+  async function installApp() {
+    if (installPrompt) {
+      installPrompt.prompt();
+      await installPrompt.userChoice;
+      installPrompt = null;
+      updateInstallButton();
+    } else {
+      toast(t('install.ios'));
+    }
+  }
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => { /* the app still works without it */ });
   }
 
   // ---------- Intro guide: 5 animated scenes, like stories ----------
