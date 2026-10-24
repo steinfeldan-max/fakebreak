@@ -1233,15 +1233,18 @@
     return err;
   }
 
-  // Decode any recording/file to 16 kHz mono. Decoding happens at the device's own rate (some phones,
-  // e.g. iPhones, refuse an AudioContext at 16 kHz), then we resample with an OfflineAudioContext,
-  // or with linear interpolation if that's unavailable too.
+  // Decode any recording/file to 16 kHz mono, resampled exactly like pellav2's Python code (pella.js).
+  // WAV files are read directly at their own rate; other formats (recordings, voice notes, video sound)
+  // are decoded by the browser at the device's rate (some phones, e.g. iPhones, refuse a 16 kHz context).
   async function decodeVoice(file) {
+    const buf = await file.arrayBuffer();
+    const wav = pellaParseWav(buf);
+    if (wav) return pellaResample(wav.mono, wav.rate, PELLA_SR);
     const Ctx = window.AudioContext || window.webkitAudioContext;
     const ctx = new Ctx();
     let audio;
     try {
-      audio = await ctx.decodeAudioData(await file.arrayBuffer());
+      audio = await ctx.decodeAudioData(buf);
     } finally {
       ctx.close();
     }
@@ -1250,25 +1253,7 @@
       const ch = audio.getChannelData(c);
       for (let i = 0; i < ch.length; i++) mono[i] += ch[i] / audio.numberOfChannels;
     }
-    if (audio.sampleRate === PELLA_SR) return mono;
-    const outLen = Math.ceil(audio.duration * PELLA_SR);
-    try {
-      const off = new OfflineAudioContext(1, outLen, PELLA_SR);
-      const buf = off.createBuffer(1, mono.length, audio.sampleRate);
-      buf.copyToChannel(mono, 0);
-      const src = off.createBufferSource();
-      src.buffer = buf;
-      src.connect(off.destination);
-      src.start();
-      return (await off.startRendering()).getChannelData(0);
-    } catch (e) {
-      const out = new Float32Array(outLen), ratio = audio.sampleRate / PELLA_SR;
-      for (let i = 0; i < outLen; i++) {
-        const x = i * ratio, j = Math.floor(x), f = x - j;
-        out[i] = (mono[j] || 0) * (1 - f) + (mono[j + 1] || 0) * f;
-      }
-      return out;
-    }
+    return pellaResample(mono, audio.sampleRate, PELLA_SR);
   }
 
   let vadSession = null;
