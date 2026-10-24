@@ -266,6 +266,17 @@
   #call .top { align-self: stretch; display: flex; justify-content: space-between; align-items: center; }
   #call .switch { border: 2px solid var(--violet); color: var(--ink); font-size: 16px; }
   #call h1 { font-size: 28px; line-height: 1.3; }
+  .call-rule { align-self: stretch; background: var(--red-soft); color: var(--red-dark); border-radius: 14px; padding: 12px 14px; font-size: 18px; font-weight: 500; line-height: 1.4; }
+  .call-opt {
+    font-family: inherit; align-self: stretch; text-align: start; cursor: pointer;
+    background: var(--violet-soft); color: var(--ink); border: 2px solid transparent; border-radius: 16px;
+    padding: 14px 16px; display: flex; flex-direction: column; gap: 4px;
+  }
+  .call-opt:hover { border-color: var(--violet); }
+  .call-opt b { font-size: 20px; font-weight: 500; }
+  .call-opt span { font-size: 15px; color: var(--muted); line-height: 1.45; }
+  .call-live { display: none; flex-direction: column; align-items: center; gap: 12px; align-self: stretch; }
+  .call-live.show { display: flex; }
   .call-steps { text-align: start; font-size: 19px; line-height: 1.5; padding-inline-start: 26px; align-self: stretch; }
   .call-steps li { margin-bottom: 6px; }
   #call .call-mic { width: 170px; height: 170px; flex-shrink: 0; background: var(--red); margin-top: 6px; }
@@ -669,17 +680,31 @@
       <div class="logo"><span><span class="fake">Fake</span><span class="break">Break</span></span></div>
       <button class="switch" onclick="stopRecording(false); endCall(); goHome()" data-t="text.back"></button>
     </div>
+    <p class="call-rule" data-t="call.rule"></p>
     <h1 data-t="call.title"></h1>
-    <ol class="call-steps">
-      <li data-t="call.step1"></li>
-      <li data-t="call.step2"></li>
-      <li data-t="call.step3"></li>
-    </ol>
-    <button class="mic call-mic" id="call-btn" onclick="toggleCallRecording()" aria-label="Record call">
-      <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+    <!-- During a phone call most phones don't let another app use the microphone, so recording the
+         call on the same phone usually fails. The two options that work come first. -->
+    <button class="call-opt" onclick="pickCallFile()">
+      <b data-t="call.opt1"></b><span data-t="call.opt1sub"></span>
     </button>
-    <div class="call-count" id="call-count"></div>
-    <div class="call-label" id="call-label"></div>
+    <button class="call-opt" onclick="pickCallFile()">
+      <b data-t="call.opt2"></b><span data-t="call.opt2sub"></span>
+    </button>
+    <button class="call-opt" onclick="showCallLive()">
+      <b data-t="call.opt3"></b><span data-t="call.opt3sub"></span>
+    </button>
+    <div class="call-live" id="call-live">
+      <ol class="call-steps">
+        <li data-t="call.step1"></li>
+        <li data-t="call.step2"></li>
+        <li data-t="call.step3"></li>
+      </ol>
+      <button class="mic call-mic" id="call-btn" onclick="toggleCallRecording()" aria-label="Record call">
+        <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+      </button>
+      <div class="call-count" id="call-count"></div>
+      <div class="call-label" id="call-label"></div>
+    </div>
     <p id="call-err" class="call-err"></p>
   </section>
 
@@ -828,6 +853,13 @@
     'demo.s5': ['דיפ-פייק בסרטון (דוגמה מוכנה)', 'Deepfake video (prepared example)', 'فيديو مزيف عميق (مثال جاهز)', 'Дипфейк-видео (готовый пример)'],
     'call.btn':['📞 מתקשרים ומבקשים כסף? לחץ כאן', '📞 Someone calling and asking for money? Tap here', '📞 شخص يتصل ويطلب المال؟ اضغط هنا', '📞 Звонят и просят денег? Нажмите здесь'],
     'call.title': ['בודקים יחד אם הקול אמיתי', "Let's check if the voice is real", 'لنتحقق معًا إن كان الصوت حقيقيًا', 'Проверим, настоящий ли голос'],
+    'call.rule': ['⚠️ מבקשים כסף או קוד? נתק והתקשר בעצמך למספר שאתה מכיר.', '⚠️ Asked for money or a code? Hang up and call back on a number you know.', '⚠️ يطلبون مالًا أو رمزًا؟ أغلق الخط واتصل بنفسك على رقم تعرفه.', '⚠️ Просят деньги или код? Положите трубку и перезвоните на известный номер.'],
+    'call.opt1': ['📲 קיבלת הודעה קולית חשודה?', '📲 Got a suspicious voice message?', '📲 وصلتك رسالة صوتية مريبة؟', '📲 Пришло подозрительное голосовое?'],
+    'call.opt1sub': ['בוואטסאפ: לחיצה ארוכה על ההודעה ← שתף ← FakeBreak. או לחץ כאן ובחר את הקובץ.', 'In WhatsApp: long-press the message → Share → FakeBreak. Or tap here and choose the file.', 'في واتساب: اضغط مطولًا على الرسالة ← مشاركة ← FakeBreak. أو اضغط هنا واختر الملف.', 'В WhatsApp: долгое нажатие на сообщение → Поделиться → FakeBreak. Или нажмите здесь и выберите файл.'],
+    'call.opt2': ['🎙️ הקלטת את השיחה?', '🎙️ Recorded the call?', '🎙️ سجّلت المكالمة؟', '🎙️ Записали звонок?'],
+    'call.opt2sub': ['ברוב הטלפונים יש כפתור "הקלט" במסך השיחה. אחרי השיחה, לחץ כאן ובחר את ההקלטה.', 'Most phones have a "Record" button on the call screen. After the call, tap here and choose the recording.', 'معظم الهواتف فيها زر "تسجيل" في شاشة المكالمة. بعد المكالمة، اضغط هنا واختر التسجيل.', 'На большинстве телефонов есть кнопка «Запись» на экране звонка. После звонка нажмите здесь и выберите запись.'],
+    'call.opt3': ['📱 יש לידך טלפון או מחשב נוסף?', '📱 Another phone or computer nearby?', '📱 هل لديك هاتف أو حاسوب آخر بجانبك؟', '📱 Рядом есть другой телефон или компьютер?'],
+    'call.opt3sub': ['שים את השיחה על רמקול, ובמכשיר השני הקלט כאן 12 שניות.', 'Put the call on speaker and record 12 seconds here on the other device.', 'شغّل المكالمة على مكبر الصوت وسجّل 12 ثانية هنا على الجهاز الآخر.', 'Включите громкую связь и запишите 12 секунд здесь на другом устройстве.'],
     'call.step1': ['שים את השיחה על רמקול.', 'Put the call on speaker.', 'شغّل المكالمة على مكبر الصوت.', 'Включите громкую связь.'],
     'call.step2': ['לחץ על הכפתור האדום וקרב את הטלפון.', 'Tap the red button and hold the phone close.', 'اضغط الزر الأحمر وقرّب الهاتف.', 'Нажмите красную кнопку и поднесите телефон ближе.'],
     'call.step3': ['נקשיב 12 שניות ונגיד לך מה לעשות.', "We'll listen for 12 seconds and tell you what to do.", 'سنستمع 12 ثانية ونخبرك بما تفعل.', 'Мы послушаем 12 секунд и скажем, что делать.'],
@@ -2254,8 +2286,24 @@
   let callMode = false;
   let callTimer = null;
 
+  // A voice message or a recording of the call, from the phone's files (WhatsApp, the phone's call recorder).
+  function pickCallFile() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'audio/*,.opus,.ogg,.m4a,.mp3,.wav,.aac,.amr,.3gp';
+    input.onchange = () => { if (input.files[0]) analyzeFile(input.files[0]); };
+    input.click();
+  }
+
+  // Recording live only works from a second device next to the phone on speaker.
+  function showCallLive() {
+    document.getElementById('call-live').classList.add('show');
+    document.getElementById('call-btn').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
   function openCall() {
     callMode = true;
+    document.getElementById('call-live').classList.remove('show');
     document.getElementById('call-count').textContent = '';
     document.getElementById('call-label').textContent = t('call.tap');
     document.getElementById('call-err').textContent = '';
