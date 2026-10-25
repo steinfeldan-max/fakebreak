@@ -245,6 +245,25 @@
   #family .hint { font-size: 17px; color: var(--muted); line-height: 1.5; }
   .f-label { font-size: 18px; font-weight: 500; }
   .f-field { direction: auto; text-align: start; font-size: 22px; }
+  .plus-link { font-family: inherit; align-self: center; background: var(--amber-soft); color: var(--amber-dark); border: none; border-radius: 999px; padding: 8px 18px; font-size: 16px; font-weight: 500; cursor: pointer; }
+  .plus-link.pro { background: rgba(239, 159, 39, .18); color: #FAC775; }
+  #plans { background: #fff; color: var(--ink); gap: 14px; }
+  #plans .top { display: flex; justify-content: space-between; align-items: center; }
+  #plans .switch { border: 2px solid var(--violet); color: var(--ink); font-size: 16px; }
+  #plans h1 { font-size: 28px; }
+  .plan { border: 2px solid var(--violet-soft); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .plan.plus { border-color: var(--amber); background: #FFFBF3; }
+  .plan-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .plan-head h2 { font-size: 22px; }
+  .plan .price { font-size: 20px; font-weight: 700; color: var(--coral-dark); }
+  .plan ul { padding-inline-start: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 16px; line-height: 1.45; color: #3a3760; }
+  .plan-note { font-size: 13px; color: var(--muted); text-align: center; }
+  .plus-on { display: none; background: var(--green-soft); color: var(--green-dark); border-radius: 12px; padding: 10px; text-align: center; font-weight: 500; }
+  #plans.is-plus .plus-on { display: block; }
+  #plans.is-plus #plus-buy, #plans.is-plus #plus-code-box { display: none; }
+  .plan-code { display: flex; flex-direction: column; gap: 8px; }
+  #plus-code { direction: ltr; font-size: 16px; }
+  #plus-activate { background: var(--violet-soft); color: var(--ink); font-size: 18px; padding: 14px; width: 100%; }
   .feedback { display: flex; flex-direction: column; align-items: center; gap: 8px; }
   .fb-open { font-family: inherit; background: none; border: none; text-decoration: underline; font-size: 15px; cursor: pointer; color: var(--muted); }
   .feedback.pro .fb-open { color: #AFA9EC; }
@@ -611,6 +630,7 @@
       <button class="tool-btn" onclick="toggleBigText()" id="big-btn" data-t="big.on"></button>
       <button class="tool-btn" onclick="openFamily()" data-t="family.btn"></button>
     </div>
+    <button class="plus-link" onclick="openPlans()" data-plus-link></button>
     <h1 data-t="home.simpleTitle"></h1>
     <button class="btn btn-call" onclick="openCall()" data-t="call.btn"></button>
     <div class="drop-simple" onclick="pickFile()">
@@ -632,6 +652,7 @@
       <button class="switch" onclick="setMode('simple')" data-t="sw.simple"></button>
     </div>
     <h1 data-t="home.proTitle"></h1>
+    <button class="plus-link pro" onclick="openPlans()" data-plus-link></button>
     <div class="scan-options">
       <button class="drop-pro" onclick="pickFile()">
         <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"/><circle cx="12" cy="12" r="3"/></svg>
@@ -824,6 +845,32 @@
     <p class="form-err" id="family-err"></p>
     <button class="btn btn-primary" onclick="saveFamily()" data-t="family.save"></button>
     <button class="link-btn" onclick="clearFamily()" data-t="family.clear"></button>
+  </section>
+
+  <!-- Screen: plans (Free / Plus). Paying gives a license code by email; entering it turns Plus on. -->
+  <section class="screen" id="plans">
+    <div class="top">
+      <div class="logo"><span><span class="fake">Fake</span><span class="break">Break</span></span></div>
+      <button class="switch" onclick="goHome()" data-t="text.back"></button>
+    </div>
+    <h1 data-t="plans.title"></h1>
+    <div class="plan">
+      <div class="plan-head"><h2 data-t="plans.free"></h2><span class="price" data-t="plans.freePrice"></span></div>
+      <ul><li data-t="plans.f1"></li><li data-t="plans.f2"></li><li data-t="plans.f3"></li></ul>
+    </div>
+    <div class="plan plus">
+      <div class="plan-head"><h2>Plus ⭐</h2><span class="price" data-t="plans.plusPrice"></span></div>
+      <ul><li data-t="plans.p1"></li><li data-t="plans.p2"></li><li data-t="plans.p3"></li></ul>
+      <p class="plus-on" id="plus-on" data-t="plans.active"></p>
+      <button class="btn btn-primary" id="plus-buy" onclick="buyPlus()" data-t="plans.buy"></button>
+      <p class="plan-note" data-t="plans.cancel"></p>
+    </div>
+    <div class="plan-code" id="plus-code-box">
+      <label class="f-label" for="plus-code" data-t="plans.haveCode"></label>
+      <input class="field f-field" id="plus-code" type="text" autocomplete="off" spellcheck="false" placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX">
+      <p class="form-err" id="plus-err"></p>
+      <button class="btn btn-secondary" id="plus-activate" onclick="activatePlus()" data-t="plans.activate"></button>
+    </div>
   </section>
 
   <!-- Screen 5b: result, detailed mode -->
@@ -1051,6 +1098,28 @@
     'fb.real': ['זה בעצם אמיתי', "It's actually real", 'إنه حقيقي في الواقع', 'На самом деле настоящее'],
     'fb.fake': ['זה בעצם מזויף', "It's actually fake", 'إنه مزيف في الواقع', 'На самом деле подделка'],
     'fb.thanks': ['תודה! הדיווח נשמר בהיסטוריה בטלפון שלך.', 'Thanks! Your report is saved in the history on your phone.', 'شكرًا! تم حفظ البلاغ في السجل على هاتفك.', 'Спасибо! Отчёт сохранён в истории на вашем телефоне.'],
+    'plans.link': ['⭐ FakeBreak Plus · $5 לחודש', '⭐ FakeBreak Plus · $5/month', '⭐ FakeBreak Plus · 5$ شهريًا', '⭐ FakeBreak Plus · $5 в месяц'],
+    'plans.linkOn': ['⭐ אתה מנוי Plus', '⭐ You have Plus', '⭐ أنت مشترك في Plus', '⭐ У вас Plus'],
+    'plans.title': ['בחרו מסלול', 'Choose a plan', 'اختر خطة', 'Выберите тариф'],
+    'plans.free': ['חינם', 'Free', 'مجاني', 'Бесплатно'],
+    'plans.freePrice': ['$0', '$0', '0$', '$0'],
+    'plans.f1': ['בדיקת תמונות, סרטונים, קול וטקסט', 'Check photos, videos, voice and text', 'فحص الصور والفيديو والصوت والنص', 'Проверка фото, видео, голоса и текста'],
+    'plans.f2': ['הכול נבדק בתוך הטלפון, בפרטיות', 'Everything is checked privately on your phone', 'كل شيء يُفحص بخصوصية على هاتفك', 'Всё проверяется приватно на телефоне'],
+    'plans.f3': ['תצוגה פשוטה ומפורטת, 4 שפות', 'Simple and detailed views, 4 languages', 'عرض بسيط ومفصل، 4 لغات', 'Простой и подробный режим, 4 языка'],
+    'plans.plusPrice': ['$5 לחודש', '$5/month', '5$ شهريًا', '$5 в месяц'],
+    'plans.p1': ['מנוע זיהוי מקצועי לסרטונים וקולות קשים (בקרוב)', 'Professional detection engine for hard videos and voices (coming soon)', 'محرك كشف احترافي للفيديوهات والأصوات الصعبة (قريبًا)', 'Профессиональный движок для сложных видео и голосов (скоро)'],
+    'plans.p2': ['גישה ראשונה לכל פיצ\'ר חדש', 'First access to every new feature', 'وصول أول لكل ميزة جديدة', 'Первый доступ ко всем новым функциям'],
+    'plans.p3': ['עוזרים לנו להגן על עוד משפחות', 'Help us protect more families', 'ساعدنا على حماية المزيد من العائلات', 'Помогите нам защитить больше семей'],
+    'plans.active': ['✓ Plus פעיל אצלך. תודה!', '✓ Plus is active. Thank you!', '✓ Plus مفعّل لديك. شكرًا!', '✓ Plus активен. Спасибо!'],
+    'plans.buy': ['הצטרפו ל-Plus · $5 לחודש', 'Join Plus · $5/month', 'انضم إلى Plus · 5$ شهريًا', 'Подключить Plus · $5 в месяц'],
+    'plans.cancel': ['אפשר לבטל בכל רגע. אחרי התשלום תקבלו קוד במייל.', 'Cancel anytime. After paying you\'ll get a code by email.', 'يمكن الإلغاء في أي وقت. بعد الدفع سيصلك رمز بالبريد.', 'Отменить можно в любой момент. После оплаты придёт код на почту.'],
+    'plans.haveCode': ['כבר שילמתם? הכניסו את הקוד מהמייל:', 'Already paid? Enter the code from your email:', 'دفعت بالفعل؟ أدخل الرمز من بريدك:', 'Уже оплатили? Введите код из письма:'],
+    'plans.activate': ['הפעל את Plus', 'Turn on Plus', 'فعّل Plus', 'Включить Plus'],
+    'plans.soon': ['התשלום ייפתח בקרוב. תודה על הסבלנות!', 'Payments open soon. Thanks for your patience!', 'سيُفتح الدفع قريبًا. شكرًا على صبرك!', 'Оплата скоро откроется. Спасибо за терпение!'],
+    'plans.noCode': ['הכניסו את הקוד שקיבלתם במייל.', 'Enter the code you got by email.', 'أدخل الرمز الذي وصلك بالبريد.', 'Введите код из письма.'],
+    'plans.badCode': ['הקוד לא תקין או כבר לא בתוקף.', 'This code isn\'t valid or has expired.', 'الرمز غير صالح أو منتهي.', 'Код недействителен или истёк.'],
+    'plans.offline': ['אין חיבור לאינטרנט. נסו שוב.', 'No internet connection. Try again.', 'لا يوجد اتصال بالإنترنت. حاول مجددًا.', 'Нет подключения к интернету. Попробуйте снова.'],
+    'plans.welcome': ['ברוכים הבאים ל-Plus! ⭐', 'Welcome to Plus! ⭐', 'مرحبًا بك في Plus! ⭐', 'Добро пожаловать в Plus! ⭐'],
     'about.link':['ℹ️ איך FakeBreak עובדת ופרטיות', 'ℹ️ How FakeBreak works and privacy', 'ℹ️ كيف يعمل FakeBreak والخصوصية', 'ℹ️ Как работает FakeBreak и конфиденциальность'],
     'about.title': ['איך FakeBreak עובדת', 'How FakeBreak works', 'كيف يعمل FakeBreak', 'Как работает FakeBreak'],
     'about.privacyH': ['🔒 הפרטיות שלך', '🔒 Your privacy', '🔒 خصوصيتك', '🔒 Ваша конфиденциальность'],
@@ -1210,6 +1279,7 @@
     updatePhonePlaceholder();
     updateInstallButton();
     applyBigText();
+    renderPlus();
     try { localStorage.setItem('fakebreak-lang', l); } catch (e) { /* storage blocked */ }
     if (quiet) return;
     let seen = false;
@@ -1454,6 +1524,94 @@
     try { localStorage.setItem('fakebreak-big', on ? '1' : '0'); } catch (e) { /* storage blocked */ }
     applyBigText();
   }
+
+  // ---------- FakeBreak Plus ($5 a month) ----------
+  // Payments run through Lemon Squeezy: whoever pays gets a license code by email, and the app checks
+  // that code directly with Lemon Squeezy's license API (no server of our own, no secret key in the app).
+  // To go live, an adult opens the Lemon Squeezy store, makes a $5/month subscription product with
+  // license keys turned on, and fills in the two values below. Until then "Join" says it's coming soon.
+  const PLUS_CHECKOUT_URL = '';  // the product's checkout link, e.g. https://fakebreak.lemonsqueezy.com/buy/...
+  const PLUS_STORE_ID = 0;       // the store's id, so codes from other Lemon Squeezy stores don't work
+  const PLUS_KEY = 'fakebreak-plus';
+  const LICENSE_API = 'https://api.lemonsqueezy.com/v1/licenses/';
+
+  function loadPlus() {
+    try { return JSON.parse(localStorage.getItem(PLUS_KEY)); } catch (e) { return null; }
+  }
+
+  function isPlus() {
+    return !!loadPlus();
+  }
+
+  function renderPlus() {
+    const on = isPlus();
+    document.querySelectorAll('[data-plus-link]').forEach(b => { b.textContent = t(on ? 'plans.linkOn' : 'plans.link'); });
+    document.getElementById('plans').classList.toggle('is-plus', on);
+  }
+
+  function openPlans() {
+    document.getElementById('plus-err').textContent = '';
+    renderPlus();
+    go('plans');
+  }
+
+  function buyPlus() {
+    if (!PLUS_CHECKOUT_URL) {
+      toast(t('plans.soon'));
+      return;
+    }
+    window.open(PLUS_CHECKOUT_URL, '_blank');
+  }
+
+  async function licenseCall(action, fields) {
+    const res = await fetch(LICENSE_API + action, {
+      method: 'POST',
+      headers: { Accept: 'application/json' },
+      body: new URLSearchParams(fields)
+    });
+    return res.json();
+  }
+
+  async function activatePlus() {
+    const key = document.getElementById('plus-code').value.trim();
+    const err = document.getElementById('plus-err');
+    const btn = document.getElementById('plus-activate');
+    err.textContent = '';
+    if (!key) { err.textContent = t('plans.noCode'); return; }
+    btn.disabled = true;
+    try {
+      const r = await licenseCall('activate', { license_key: key, instance_name: 'FakeBreak ' + navigator.platform });
+      if (!r.activated || (PLUS_STORE_ID && r.meta && r.meta.store_id !== PLUS_STORE_ID)) {
+        err.textContent = t('plans.badCode');
+        return;
+      }
+      try { localStorage.setItem(PLUS_KEY, JSON.stringify({ key, instance: r.instance.id, checked: Date.now() })); } catch (e) { /* storage blocked */ }
+      renderPlus();
+      toast(t('plans.welcome'));
+    } catch (e) {
+      err.textContent = t('plans.offline');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // Once a day, make sure the subscription is still paid; a cancelled one turns Plus off.
+  // No connection keeps Plus on, so a weak signal never locks a paying user out.
+  async function checkPlus() {
+    const p = loadPlus();
+    if (!p || Date.now() - p.checked < 24 * 3600 * 1000) return;
+    try {
+      const r = await licenseCall('validate', { license_key: p.key, instance_id: p.instance });
+      if (r.valid) {
+        p.checked = Date.now();
+        localStorage.setItem(PLUS_KEY, JSON.stringify(p));
+      } else {
+        localStorage.removeItem(PLUS_KEY);
+      }
+      renderPlus();
+    } catch (e) { /* offline: try again next time */ }
+  }
+  setTimeout(checkPlus, 3000);
 
   function loadFamily() {
     try { return JSON.parse(localStorage.getItem('fakebreak-family')); } catch (e) { return null; }
