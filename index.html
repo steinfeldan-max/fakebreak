@@ -233,6 +233,27 @@
   #home-pro h1 { font-size: 22px; font-weight: 500; }
   .scan-options { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 8px; }
 
+  /* Seniors: bigger text, family member, read aloud, feedback */
+  .phone.big-text { zoom: 1.18; }
+  .tools-row { display: flex; gap: 8px; }
+  .tool-btn { font-family: inherit; flex: 1; background: #fff; color: var(--ink); border: 2px solid var(--violet); border-radius: 12px; padding: 8px; font-size: 16px; cursor: pointer; }
+  .btn-family { display: none; background: var(--green); color: #fff; text-align: center; text-decoration: none; }
+  #family { background: #fff; color: var(--ink); gap: 12px; }
+  #family .top { display: flex; justify-content: space-between; align-items: center; }
+  #family .switch { border: 2px solid var(--violet); color: var(--ink); font-size: 16px; }
+  #family h1 { font-size: 28px; }
+  #family .hint { font-size: 17px; color: var(--muted); line-height: 1.5; }
+  .f-label { font-size: 18px; font-weight: 500; }
+  .f-field { direction: auto; text-align: start; font-size: 22px; }
+  .feedback { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .fb-open { font-family: inherit; background: none; border: none; text-decoration: underline; font-size: 15px; cursor: pointer; color: var(--muted); }
+  .feedback.pro .fb-open { color: #AFA9EC; }
+  .fb-choices { display: none; gap: 8px; }
+  .feedback.open .fb-choices { display: flex; }
+  .fb-choices button { font-family: inherit; border: 1px solid var(--violet); background: none; border-radius: 999px; padding: 8px 14px; font-size: 15px; cursor: pointer; color: inherit; }
+  #result-simple .fb-choices button { color: var(--ink); }
+  .feedback.pro .fb-choices button { color: #fff; }
+
   /* How it works */
   #about { background: var(--violet-soft); color: var(--ink); gap: 12px; }
   #about .top { display: flex; justify-content: space-between; align-items: center; }
@@ -243,6 +264,9 @@
   .about-card p, .about-card li { font-size: 15px; line-height: 1.55; color: #3a3760; }
   .about-card ul { padding-inline-start: 20px; display: flex; flex-direction: column; gap: 4px; }
   .about-card.tip { background: var(--amber-soft); }
+  .about-card.legal li { font-size: 14px; }
+  .legal-draft { font-size: 13px !important; color: #8a6200 !important; margin-bottom: 6px; }
+  .legal-date { font-size: 12px !important; color: #8b88a8 !important; margin-top: 8px; }
   .about-link { font-family: inherit; background: none; border: none; text-decoration: underline; font-size: 15px; cursor: pointer; align-self: center; padding: 4px; }
   #home-simple .about-link { color: var(--muted); }
   #home-pro .about-link { color: #AFA9EC; }
@@ -583,6 +607,10 @@
       <div class="logo"><span><span class="fake">Fake</span><span class="break">Break</span></span></div>
       <button class="switch" onclick="setMode('pro')" data-t="sw.pro"></button>
     </div>
+    <div class="tools-row">
+      <button class="tool-btn" onclick="toggleBigText()" id="big-btn" data-t="big.on"></button>
+      <button class="tool-btn" onclick="openFamily()" data-t="family.btn"></button>
+    </div>
     <h1 data-t="home.simpleTitle"></h1>
     <button class="btn btn-call" onclick="openCall()" data-t="call.btn"></button>
     <div class="drop-simple" onclick="pickFile()">
@@ -726,6 +754,25 @@
     </div>
     <div class="about-card"><h2 data-t="about.limitsH"></h2><p data-t="about.limits"></p></div>
     <div class="about-card tip"><h2 data-t="about.tipH"></h2><p data-t="about.tip"></p></div>
+    <div class="about-card legal" id="privacy"><h2 data-t="legal.privacyH"></h2>
+      <p class="legal-draft" data-t="legal.draft"></p>
+      <ul>
+        <li data-t="legal.p1"></li>
+        <li data-t="legal.p2"></li>
+        <li data-t="legal.p3"></li>
+        <li data-t="legal.p4"></li>
+        <li data-t="legal.p5"></li>
+      </ul>
+    </div>
+    <div class="about-card legal" id="terms"><h2 data-t="legal.termsH"></h2>
+      <ul>
+        <li data-t="legal.t1"></li>
+        <li data-t="legal.t2"></li>
+        <li data-t="legal.t3"></li>
+        <li data-t="legal.t4"></li>
+      </ul>
+      <p class="legal-date" data-t="legal.date"></p>
+    </div>
   </section>
 
   <!-- Screen 4: scanning -->
@@ -748,9 +795,35 @@
       <div class="verdict-title" id="rs-title"></div>
       <div class="verdict-line" id="rs-line"></div>
     </div>
+    <a class="btn btn-big btn-family" id="rs-family" href="#"></a>
+    <button class="btn btn-big btn-again-simple" onclick="speakResult()" data-t="speak.btn"></button>
     <button class="btn btn-big btn-share-simple" onclick="share()" id="rs-share"></button>
     <button class="btn btn-big btn-again-simple" onclick="webSearch('lens')" id="rs-web" data-t="web.simpleBtn"></button>
     <button class="btn btn-big btn-again-simple" onclick="goHome()" data-t="rs.again"></button>
+    <div class="feedback" data-fb>
+      <button class="fb-open" onclick="openFeedback(this)" data-t="fb.open"></button>
+      <div class="fb-choices">
+        <button onclick="sendFeedback('real')" data-t="fb.real"></button>
+        <button onclick="sendFeedback('fake')" data-t="fb.fake"></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Screen: family member to call (seniors) -->
+  <section class="screen" id="family">
+    <div class="top">
+      <div class="logo"><span><span class="fake">Fake</span><span class="break">Break</span></span></div>
+      <button class="switch" onclick="goHome()" data-t="text.back"></button>
+    </div>
+    <h1 data-t="family.title"></h1>
+    <p class="hint" data-t="family.hint"></p>
+    <label class="f-label" data-t="family.name"></label>
+    <input class="field f-field" id="family-name" type="text" autocomplete="off">
+    <label class="f-label" data-t="family.phone"></label>
+    <input class="field f-field" id="family-phone" type="tel" inputmode="tel" autocomplete="off" placeholder="050-123-4567">
+    <p class="form-err" id="family-err"></p>
+    <button class="btn btn-primary" onclick="saveFamily()" data-t="family.save"></button>
+    <button class="link-btn" onclick="clearFamily()" data-t="family.clear"></button>
   </section>
 
   <!-- Screen 5b: result, detailed mode -->
@@ -811,6 +884,13 @@
       <button class="btn btn-pro btn-again-pro" onclick="goHome()" data-t="rp.again"></button>
     </div>
     <p class="disclaimer" data-t="rp.disclaimer"></p>
+    <div class="feedback pro" data-fb>
+      <button class="fb-open" onclick="openFeedback(this)" data-t="fb.open"></button>
+      <div class="fb-choices">
+        <button onclick="sendFeedback('real')" data-t="fb.real"></button>
+        <button onclick="sendFeedback('fake')" data-t="fb.fake"></button>
+      </div>
+    </div>
   </section>
 
   <input type="file" id="file-input" accept="image/*,video/*,audio/*,.opus,.ogg,.m4a" hidden>
@@ -954,7 +1034,24 @@
     'home.textSub': ['הודעה · כתבה', 'Message · Article', 'رسالة · مقال', 'Сообщение · Статья'],
     'stat.scans': ['סריקות', 'Scans', 'عمليات فحص', 'Проверок'],
     'stat.busted': ['זיופים נשברו', 'Fakes busted', 'تزييفات مكشوفة', 'Подделок найдено'],
-    'about.link': ['ℹ️ איך FakeBreak עובדת ופרטיות', 'ℹ️ How FakeBreak works and privacy', 'ℹ️ كيف يعمل FakeBreak والخصوصية', 'ℹ️ Как работает FakeBreak и конфиденциальность'],
+    'speak.btn': ['🔊 הקרא לי את התשובה', '🔊 Read the answer aloud', '🔊 اقرأ لي الإجابة', '🔊 Прочитать ответ вслух'],
+    'big.on': ['🔠 טקסט גדול', '🔠 Bigger text', '🔠 نص أكبر', '🔠 Крупный текст'],
+    'big.off': ['🔡 טקסט רגיל', '🔡 Normal text', '🔡 نص عادي', '🔡 Обычный текст'],
+    'family.btn': ['👨‍👩‍👧 בן משפחה לעזרה', '👨‍👩‍👧 Family helper', '👨‍👩‍👧 فرد عائلة للمساعدة', '👨‍👩‍👧 Родственник для помощи'],
+    'family.title': ['למי להתקשר כשמשהו חשוד?', 'Who should you call when something looks suspicious?', 'بمن تتصل عندما يبدو شيء مريبًا؟', 'Кому звонить, если что-то подозрительно?'],
+    'family.hint': ['כשהתוצאה "מזויף" או "לא בטוח", יופיע כפתור גדול שמתקשר אליו בלחיצה אחת. הפרטים נשמרים רק בטלפון הזה.', 'When the result is "fake" or "not sure", a big button will call them in one tap. The details stay on this phone only.', 'عندما تكون النتيجة "مزيف" أو "غير متأكد"، سيظهر زر كبير للاتصال به بضغطة واحدة. التفاصيل تبقى على هذا الهاتف فقط.', 'Если результат «подделка» или «не уверены», появится большая кнопка, чтобы позвонить ему одним нажатием. Данные хранятся только на этом телефоне.'],
+    'family.name': ['שם (למשל: דני הנכד)', 'Name (e.g. Danny, grandson)', 'الاسم (مثلًا: داني الحفيد)', 'Имя (например: внук Даня)'],
+    'family.phone': ['מספר טלפון', 'Phone number', 'رقم الهاتف', 'Номер телефона'],
+    'family.save': ['שמור', 'Save', 'حفظ', 'Сохранить'],
+    'family.clear': ['מחק את הפרטים', 'Remove these details', 'احذف هذه التفاصيل', 'Удалить данные'],
+    'family.bad': ['צריך שם ומספר טלפון מלא.', 'Enter a name and a full phone number.', 'أدخل اسمًا ورقم هاتف كاملًا.', 'Введите имя и полный номер телефона.'],
+    'family.saved': ['נשמר. {name} יופיע בתוצאות חשודות.', 'Saved. {name} will appear on suspicious results.', 'تم الحفظ. سيظهر {name} في النتائج المريبة.', 'Сохранено. {name} появится при подозрительных результатах.'],
+    'family.call': ['📞 התקשר ל{name}', '📞 Call {name}', '📞 اتصل بـ{name}', '📞 Позвонить: {name}'],
+    'fb.open': ['👎 האפליקציה טעתה?', '👎 Was the app wrong?', '👎 هل أخطأ التطبيق؟', '👎 Приложение ошиблось?'],
+    'fb.real': ['זה בעצם אמיתי', "It's actually real", 'إنه حقيقي في الواقع', 'На самом деле настоящее'],
+    'fb.fake': ['זה בעצם מזויף', "It's actually fake", 'إنه مزيف في الواقع', 'На самом деле подделка'],
+    'fb.thanks': ['תודה! הדיווח נשמר בהיסטוריה בטלפון שלך.', 'Thanks! Your report is saved in the history on your phone.', 'شكرًا! تم حفظ البلاغ في السجل على هاتفك.', 'Спасибо! Отчёт сохранён в истории на вашем телефоне.'],
+    'about.link':['ℹ️ איך FakeBreak עובדת ופרטיות', 'ℹ️ How FakeBreak works and privacy', 'ℹ️ كيف يعمل FakeBreak والخصوصية', 'ℹ️ Как работает FakeBreak и конфиденциальность'],
     'about.title': ['איך FakeBreak עובדת', 'How FakeBreak works', 'كيف يعمل FakeBreak', 'Как работает FakeBreak'],
     'about.privacyH': ['🔒 הפרטיות שלך', '🔒 Your privacy', '🔒 خصوصيتك', '🔒 Ваша конфиденциальность'],
     'about.privacy': ['תמונות, סרטונים והקלטות נבדקים בתוך הטלפון שלך ולא נשלחים לשום מקום. מספר הטלפון לא נשמר, ורשימת הבדיקות נשמרת רק אצלך. רק אם תבחר "חפש באינטרנט", התמונה נשלחת לאתר החיפוש שבחרת.', 'Photos, videos and recordings are checked on your phone and never sent anywhere. Your phone number isn’t stored, and your list of checks stays with you. Only if you choose "Search online" is the image sent to the search site you pick.', 'تُفحص الصور والفيديوهات والتسجيلات على هاتفك ولا تُرسل إلى أي مكان. لا يُحفظ رقم هاتفك، وقائمة فحوصاتك تبقى عندك. فقط إذا اخترت "البحث على الإنترنت" تُرسل الصورة إلى موقع البحث الذي تختاره.', 'Фото, видео и записи проверяются на вашем телефоне и никуда не отправляются. Номер телефона не сохраняется, а список проверок остаётся у вас. Только если вы выберете «Искать в интернете», фото уйдёт на выбранный сайт поиска.'],
@@ -966,7 +1063,20 @@
     'about.testVideo': ['סרטונים: בדיקה קטנה של 5 סרטונים, כולם זוהו נכון.', 'Videos: a small test of 5 videos, all identified correctly.', 'الفيديو: اختبار صغير على 5 فيديوهات، كلها حُددت بشكل صحيح.', 'Видео: небольшой тест на 5 роликах, все определены верно.'],
     'about.limitsH': ['⚠️ המגבלות', '⚠️ Limitations', '⚠️ القيود', '⚠️ Ограничения'],
     'about.limits': ['אף מערכת לא מושלמת. סרטונים ממחוללים חדשים (Veo, Sora), במיוחד אחרי וואטסאפ, קשים מאוד לזיהוי, ולכן כשיש ספק נגיד "לא בטוח" ולא "אמיתי". בדיקת טקסט בעברית עוד לא זמינה.', 'No system is perfect. Videos from the newest generators (Veo, Sora), especially after WhatsApp, are very hard to detect, so when in doubt we say "not sure", never "real". Hebrew text checks aren’t available yet.', 'لا يوجد نظام مثالي. فيديوهات المولدات الحديثة (Veo وSora)، خاصة بعد واتساب، صعبة الكشف جدًا، لذلك عند الشك نقول "غير متأكد" وليس "حقيقي". فحص النص العبري غير متاح بعد.', 'Ни одна система не идеальна. Видео новейших генераторов (Veo, Sora), особенно после WhatsApp, очень трудно распознать, поэтому при сомнении мы говорим «не уверены», а не «настоящее». Проверка текста на иврите пока недоступна.'],
-    'about.tipH': ['💡 הכלל הכי חשוב', '💡 The most important rule', '💡 القاعدة الأهم', '💡 Главное правило'],
+    'legal.privacyH': ['📄 מדיניות פרטיות', '📄 Privacy policy', '📄 سياسة الخصوصية', '📄 Политика конфиденциальности'],
+    'legal.draft': ['טיוטה לגרסת ההדגמה. לפני השקה רשמית היא תיבדק עם עורך דין.', 'Draft for the demo version. It will be reviewed by a lawyer before an official launch.', 'مسودة لنسخة العرض. ستتم مراجعتها مع محامٍ قبل الإطلاق الرسمي.', 'Черновик для демо-версии. Перед официальным запуском его проверит юрист.'],
+    'legal.p1': ['הבדיקה עצמה רצה בתוך הטלפון שלך. התמונות, הסרטונים, ההקלטות והטקסטים שאתה בודק לא נשלחים לשום שרת שלנו.', 'The check itself runs inside your phone. The photos, videos, recordings and texts you check are not sent to any server of ours.', 'يتم الفحص داخل هاتفك. الصور والفيديوهات والتسجيلات والنصوص التي تفحصها لا تُرسل إلى أي خادم لنا.', 'Проверка выполняется внутри вашего телефона. Фото, видео, записи и тексты, которые вы проверяете, не отправляются ни на какой наш сервер.'],
+    'legal.p2': ['מה נשמר בטלפון בלבד: היסטוריית הבדיקות (בלי הקבצים עצמם), השפה, גודל הטקסט ופרטי בן המשפחה אם הזנת. אפשר למחוק הכול דרך ניקוי נתוני האתר בדפדפן.', 'Stored on your phone only: the check history (without the files themselves), language, text size and the family helper details if you entered them. You can erase all of it by clearing the site data in your browser.', 'ما يُحفظ على هاتفك فقط: سجل الفحوصات (بدون الملفات نفسها)، اللغة، حجم النص وبيانات فرد العائلة إن أدخلتها. يمكنك حذف كل ذلك بمسح بيانات الموقع في المتصفح.', 'Хранится только на вашем телефоне: история проверок (без самих файлов), язык, размер текста и данные родственника, если вы их ввели. Всё это можно стереть, очистив данные сайта в браузере.'],
+    'legal.p3': ['מנועי הזיהוי מורדים פעם אחת מאתרים חיצוניים (Hugging Face ו-jsDelivr). כמו בכל אתר, הם רואים את כתובת ה-IP של המכשיר, אבל לא את מה שאתה בודק.', 'The detection engines are downloaded once from outside sites (Hugging Face and jsDelivr). Like any website, they see your device\'s IP address, but not what you check.', 'تُنزَّل محركات الكشف مرة واحدة من مواقع خارجية (Hugging Face وjsDelivr). مثل أي موقع، ترى عنوان IP لجهازك، لكن ليس ما تفحصه.', 'Движки распознавания загружаются один раз с внешних сайтов (Hugging Face и jsDelivr). Как любой сайт, они видят IP-адрес устройства, но не то, что вы проверяете.'],
+    'legal.p4': ['רק אם תלחץ בעצמך על "חיפוש ברשת" או "שתף", התמונה נשלחת לשירות שבחרת (למשל Google או WhatsApp), לפי מדיניות הפרטיות שלו.', 'Only if you tap "search the web" or "share" yourself is the image sent to the service you chose (e.g. Google or WhatsApp), under that service\'s privacy policy.', 'فقط إذا ضغطت بنفسك على "البحث في الويب" أو "مشاركة"، تُرسل الصورة إلى الخدمة التي اخترتها (مثل Google أو WhatsApp)، وفق سياسة الخصوصية الخاصة بها.', 'Только если вы сами нажмёте «поиск в интернете» или «поделиться», изображение отправится в выбранный вами сервис (например Google или WhatsApp) по его политике конфиденциальности.'],
+    'legal.p5': ['אין פרסומות, אין מעקב ואין מכירת מידע. הכניסה עם מספר טלפון היא הדגמה בלבד: המספר לא נשלח ולא נשמר אצלנו.', 'No ads, no tracking and no selling of data. The phone-number sign-in is a demo only: the number is not sent to or stored by us.', 'لا إعلانات ولا تتبع ولا بيع للبيانات. تسجيل الدخول برقم الهاتف تجريبي فقط: الرقم لا يُرسل إلينا ولا يُحفظ لدينا.', 'Никакой рекламы, слежки и продажи данных. Вход по номеру телефона — только демонстрация: номер не отправляется нам и не хранится у нас.'],
+    'legal.termsH': ['📜 תנאי שימוש', '📜 Terms of use', '📜 شروط الاستخدام', '📜 Условия использования'],
+    'legal.t1': ['FakeBreak היא כלי עזר שנותן הערכה, לא הוכחה. היא יכולה לטעות לשני הכיוונים.', 'FakeBreak is a helper tool that gives an estimate, not proof. It can be wrong in either direction.', 'FakeBreak أداة مساعدة تعطي تقديرًا وليس دليلًا. يمكن أن تخطئ في الاتجاهين.', 'FakeBreak — вспомогательный инструмент, который даёт оценку, а не доказательство. Он может ошибаться в обе стороны.'],
+    'legal.t2': ['אל תקבל החלטות כספיות, משפטיות או רפואיות רק לפי התוצאה. כשיש ספק, בדוק מול אדם שאתה מכיר או מול הגורם הרשמי.', 'Don\'t make money, legal or medical decisions based on the result alone. When in doubt, check with someone you know or with the official source.', 'لا تتخذ قرارات مالية أو قانونية أو طبية بناءً على النتيجة وحدها. عند الشك، تحقق مع شخص تعرفه أو مع الجهة الرسمية.', 'Не принимайте финансовых, юридических или медицинских решений только по результату. Если сомневаетесь, проверьте у знакомого человека или в официальном источнике.'],
+    'legal.t3': ['בדוק רק קבצים שמותר לך להשתמש בהם, ואל תשתמש בתוצאה כדי לפגוע באדם או להאשים אותו.', 'Only check files you\'re allowed to use, and don\'t use a result to hurt or accuse anyone.', 'افحص فقط الملفات المسموح لك باستخدامها، ولا تستخدم النتيجة لإيذاء أحد أو اتهامه.', 'Проверяйте только файлы, которые вам разрешено использовать, и не используйте результат, чтобы навредить кому-то или обвинить его.'],
+    'legal.t4': ['האפליקציה ניתנת כמו שהיא, בחינם, בגרסת הדגמה. התנאים עשויים להשתנות לפני ההשקה הרשמית.', 'The app is provided as is, free, as a demo version. These terms may change before the official launch.', 'يُقدَّم التطبيق كما هو، مجانًا، كنسخة تجريبية. قد تتغير هذه الشروط قبل الإطلاق الرسمي.', 'Приложение предоставляется «как есть», бесплатно, в демо-версии. Условия могут измениться до официального запуска.'],
+    'legal.date': ['עודכן: אוקטובר 2026', 'Updated: October 2026', 'آخر تحديث: أكتوبر 2026', 'Обновлено: октябрь 2026'],
+    'about.tipH':['💡 הכלל הכי חשוב', '💡 The most important rule', '💡 القاعدة الأهم', '💡 Главное правило'],
     'about.tip': ['אם מבקשים ממך כסף או קוד, גם אם הקול נשמע אמיתי, נתק והתקשר בעצמך למספר שאתה מכיר.', 'If someone asks you for money or a code, even if the voice sounds real, hang up and call back on a number you know.', 'إذا طلب منك أحد مالًا أو رمزًا، حتى لو بدا الصوت حقيقيًا، أغلق الخط واتصل بنفسك على رقم تعرفه.', 'Если у вас просят деньги или код, даже если голос звучит по-настоящему, положите трубку и перезвоните на известный вам номер.'],
     'stat.today':['היום', 'Today', 'اليوم', 'Сегодня'],
     'home.history': ['הבדיקות שלי', 'My checks', 'فحوصاتي', 'Мои проверки'],
@@ -1099,6 +1209,7 @@
     document.getElementById('country').value = l === 'en' ? 'US' : 'IL';
     updatePhonePlaceholder();
     updateInstallButton();
+    applyBigText();
     try { localStorage.setItem('fakebreak-lang', l); } catch (e) { /* storage blocked */ }
     if (quiet) return;
     let seen = false;
@@ -1315,6 +1426,83 @@
     go(mode === 'simple' ? 'home-simple' : 'home-pro');
   }
 
+  // ---------- For seniors: read the result aloud, bigger text, a family member to call ----------
+
+  const SPEECH_LANGS = { he: 'he-IL', en: 'en-US', ar: 'ar-SA', ru: 'ru-RU' };
+
+  // Uses the phone's own text-to-speech (free, offline on most phones); silently does nothing without it.
+  function speakResult() {
+    if (!current || !('speechSynthesis' in window)) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(current.simpleTitle + '. ' + current.simpleLine);
+    u.lang = SPEECH_LANGS[lang] || 'he-IL';
+    const voice = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith(lang));
+    if (voice) u.voice = voice;
+    u.rate = 0.9;
+    speechSynthesis.speak(u);
+  }
+
+  function applyBigText() {
+    let on = false;
+    try { on = localStorage.getItem('fakebreak-big') === '1'; } catch (e) { /* storage blocked */ }
+    document.querySelector('.phone').classList.toggle('big-text', on);
+    document.getElementById('big-btn').textContent = t(on ? 'big.off' : 'big.on');
+  }
+
+  function toggleBigText() {
+    const on = !document.querySelector('.phone').classList.contains('big-text');
+    try { localStorage.setItem('fakebreak-big', on ? '1' : '0'); } catch (e) { /* storage blocked */ }
+    applyBigText();
+  }
+
+  function loadFamily() {
+    try { return JSON.parse(localStorage.getItem('fakebreak-family')); } catch (e) { return null; }
+  }
+
+  function openFamily() {
+    const fam = loadFamily() || {};
+    document.getElementById('family-name').value = fam.name || '';
+    document.getElementById('family-phone').value = fam.phone || '';
+    document.getElementById('family-err').textContent = '';
+    go('family');
+  }
+
+  function saveFamily() {
+    const name = document.getElementById('family-name').value.trim();
+    const phone = document.getElementById('family-phone').value.trim();
+    if (!name || phone.replace(/\D/g, '').length < 9) {
+      document.getElementById('family-err').textContent = t('family.bad');
+      return;
+    }
+    try { localStorage.setItem('fakebreak-family', JSON.stringify({ name, phone })); } catch (e) { /* storage blocked */ }
+    toast(t('family.saved', { name }));
+    goHome();
+  }
+
+  function clearFamily() {
+    try { localStorage.removeItem('fakebreak-family'); } catch (e) { /* storage blocked */ }
+    openFamily();
+  }
+
+  // ---------- "The app was wrong": saved with the check in the history on this phone ----------
+
+  function openFeedback(btn) {
+    btn.closest('[data-fb]').classList.add('open');
+  }
+
+  function sendFeedback(actual) {
+    document.querySelectorAll('[data-fb]').forEach(el => el.classList.remove('open'));
+    if (!current) return;
+    current.feedback = actual;
+    const list = loadHistory();
+    const entry = list.find(h => h.when === current.saved);
+    if (entry) {
+      entry.feedback = actual;
+      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); } catch (e) { /* storage blocked */ }
+    }
+    toast(t('fb.thanks'));
+  }
+
   // ---------- "How it works" screen (from the welcome screen or either home) ----------
 
   let aboutBack = 'welcome';
@@ -1338,9 +1526,9 @@
 
   function saveToHistory(d) {
     if (!d.live || d.saved) return;
-    d.saved = true;
+    d.saved = Date.now();
     const { preview, heat, ...rest } = d; // the photo itself stays out of storage
-    const list = [{ ...rest, when: Date.now() }, ...loadHistory()].slice(0, HISTORY_MAX);
+    const list = [{ ...rest, when: d.saved }, ...loadHistory()].slice(0, HISTORY_MAX);
     try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); } catch (e) { /* storage full or blocked */ }
   }
 
@@ -1413,7 +1601,8 @@
   // ---------- Detection engine (runs fully in the browser, files never leave the device) ----------
 
   const TRANSFORMERS_URL = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1';
-  const ORT_URL = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.bundle.min.mjs';
+  // The WebGPU build also contains the regular (wasm) engine, so it's the only copy we load.
+  const ORT_URL = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.webgpu.bundle.min.mjs';
   // SwinV2 AI-image detector (haywoodsloan/ai-image-detector-deploy). Output 0 = artificial, 1 = real.
   // Transformers.js doesn't support swinv2 yet, so we run it with ONNX Runtime directly.
   const IMAGE_MODEL_URL = 'https://huggingface.co/LPX55/detection-model-1-ONNX/resolve/main/onnx/model_quantized.onnx';
@@ -1527,10 +1716,18 @@
     return blob.arrayBuffer();
   }
 
-  async function loadSession(url) {
+  // gpu: run on the graphics card when the browser supports it (WebGPU), else on the processor.
+  // Only for the full-precision engines: tested to give the same numbers, 9x (PE) and 40x (CF) faster.
+  // The compressed main engine gains nothing on the GPU, so it stays on the processor.
+  async function loadSession(url, gpu) {
     if (!ort) ort = await import(ORT_URL);
     const bytes = await fetchModel(url);
     setProgress(t('scan.preparing'));
+    if (gpu && navigator.gpu) {
+      try {
+        return await ort.InferenceSession.create(new Uint8Array(bytes), { executionProviders: ['webgpu'] });
+      } catch (e) { /* no usable GPU: fall back to the processor */ }
+    }
     return ort.InferenceSession.create(bytes, { executionProviders: ['wasm'] });
   }
 
@@ -1540,7 +1737,7 @@
   }
 
   async function getPeSession() {
-    if (!peSession) peSession = loadSession(PE_MODEL_URL).catch(e => { peSession = null; throw e; });
+    if (!peSession) peSession = loadSession(PE_MODEL_URL, true).catch(e => { peSession = null; throw e; });
     return peSession;
   }
 
@@ -1723,7 +1920,7 @@
   }
 
   async function getCfSession() {
-    if (!cfSession) cfSession = loadSession(CF_MODEL_URL).catch(e => { cfSession = null; throw e; });
+    if (!cfSession) cfSession = loadSession(CF_MODEL_URL, true).catch(e => { cfSession = null; throw e; });
     return cfSession;
   }
 
@@ -2493,6 +2690,7 @@
   function showResult(d) {
     current = d;
     saveToHistory(d);
+    document.querySelectorAll('[data-fb]').forEach(el => el.classList.remove('open'));
     if (mode === 'simple') {
       document.getElementById('rs-card').className = 'verdict-card v-' + d.verdict;
       document.getElementById('rs-icon').innerHTML = ICONS[d.verdict];
@@ -2500,6 +2698,16 @@
       document.getElementById('rs-line').textContent = d.simpleLine;
       document.getElementById('rs-share').textContent = t(d.verdict === 'real' ? 'rs.shareReal' : 'rs.shareWarn');
       document.getElementById('rs-web').style.display = d.preview ? '' : 'none';
+      // A family member to call, when one is set and the result is not "real".
+      const fam = loadFamily(), famBtn = document.getElementById('rs-family');
+      if (fam && d.verdict !== 'real') {
+        famBtn.style.display = 'block';
+        famBtn.href = 'tel:' + fam.phone.replace(/[^\d+]/g, '');
+        famBtn.textContent = t('family.call', { name: fam.name });
+      } else {
+        famBtn.style.display = 'none';
+      }
+      if (callMode) speakResult();
       go('result-simple');
       return;
     }
